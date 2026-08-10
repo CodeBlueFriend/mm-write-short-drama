@@ -7,6 +7,7 @@
 - `production_mode`：真人 / AI / 混合 / 暂不限
 - `delivery_scope`：
 - `review_mode`：严格确认 / 辅助确认 / 自动推进
+- 个人知识库路径：
 
 ## 创作目标
 

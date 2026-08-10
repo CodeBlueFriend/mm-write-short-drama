@@ -1,11 +1,23 @@
-# 技巧库结构与调用
+# 知识卡规范
 
-技巧按故事命题、人物关系、冲突升级、开场、分集卡点、反转/悬念/伏笔、场景、对白/潜台词、情绪节奏、改编、去 AI 味、真人制作、AI 制作、题材专项、审核失败分类。
+每张知识卡位于根目录 `knowledge-base/cards/<id>.md`，使用 Markdown 包裹机器可读 JSON。字段必须包括：
 
-每条规则保存：`id`、`title`、`rule`、`rationale`、`stage`、`genres`、`formats`、`priority`、`exceptions`、`positive_example`、`negative_example`、`source`、`status`、`version`。
+| 字段 | 约束 |
+|---|---|
+| `id` | 按规则正文哈希生成的稳定 ID，不随标题改变 |
+| `title` | 简短人类可读标题 |
+| `rule` | 单一、可执行、可验证的原子规则 |
+| `rationale` | 规则有效的原因 |
+| `category` | 开场、人物、结构、分集、场景、对白、改编、制作、审核等 |
+| `stage` | `planning/structure/episode/scene/dialogue/review/adaptation/all` 数组 |
+| `genre` | 适用题材数组，通用用 `all` |
+| `production_mode` | `live-action/ai/hybrid/unspecified/all` 数组 |
+| `priority` | `hard/preferred/optional/experimental` |
+| `exceptions` | 不适用条件数组 |
+| `positive_example` | 能说明规则的正例 |
+| `negative_example` | 能说明失败方式的反例 |
+| `source` | 原始资料 ID、路径、文件名、SHA-256 和保存时间 |
+| `status` | `draft/active/pending-conflict/duplicate/rejected/deprecated/archived` |
+| `version` | 正整数；显式状态/内容变化时递增 |
 
-只加载阶段、题材和形式匹配且状态可用的规则。优先级从高到低：当前项目明确要求；项目锁定事实；安全/版权硬约束；用户确认的全局硬规则；题材/形式规则；通用优先原则；实验规则。
-
-技巧不是绝对公式。`hard` 必须满足；`preferred` 原则上满足但可说明例外；`optional` 作为候选；`experimental` 必须标注验证目标。任何规则都要带适用范围和例外。
-
-示例基线规则：首次有效反击应改变资源、关系或信息状态，单纯骂赢不算；但若前期压抑是经用户确认的结构策略，可延后并记录回报承诺。
+`active` 才可默认检索。稳定 ID 和旧版本不得被新规则静默覆盖；状态变化前保存归档快照。详细流程读取 [knowledge-base.md](knowledge-base.md)。

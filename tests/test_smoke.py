@@ -36,6 +36,7 @@ class SkillSmokeTests(unittest.TestCase):
             "anti-ai-style.md",
             "production-modes.md",
             "review-rubrics.md",
+            "knowledge-base.md",
             "techniques-catalog.md",
             "techniques-inbox.md",
         ):
