@@ -1,30 +1,37 @@
-# 新技巧入库
+# 对话与批量知识录入
 
-## 处理流程
+## 对话粘贴
 
-1. 原样保存用户文本、来源和日期，不先改写覆盖。
-2. 拆成单一、可执行、可验证的原子规则；一条规则只表达一个约束。
-3. 补充阶段、题材、形式、优先级、例外、正反例、状态和版本。
-4. 搜索现有技巧库，列出一致、包含、冲突和重复关系。
-5. 无冲突则入库并添加验证用例；有冲突则说明两条规则的差异和适用范围，请用户裁决后再启用。
+把用户原文完整传入，不先用改写文本替代原始资料：
 
-## YAML 记录模板
-
-```yaml
-id: HOOK-012
-title: 首次有效反击
-rule: 主角首次有效反击必须改变资源、关系或信息状态，不能只获得口头胜利。
-rationale: 可观察的状态变化让反击真正影响后续因果。
-stage: episode-design
-genres: [女频复仇]
-formats: [all]
-priority: preferred
-exceptions: [经确认的前期压抑型结构]
-positive_example: 女主公开账本后夺回项目表决权。
-negative_example: 女主把反派骂走，但资源和关系均未变化。
-source: 用户提供；2026-08-06
-status: draft
-version: 1
+```bash
+python3 scripts/ingest_knowledge.py \
+  --kb /path/to/knowledge-base \
+  --text "用户粘贴的完整原文，包含规则、范围和说明" \
+  --rule "从原文提炼的一条原子规则" \
+  --source-name codex-conversation.md \
+  --status draft
 ```
 
-稳定 ID 不随标题修改。更新规则时增加版本并保留旧版状态；不删除冲突历史。入库后建立至少一个应触发和一个不应触发的测试提示。
+`--text` 保存证据，`--rule` 保证卡片正文只有一条原子规则。若原文本身就是单一规则，可省略 `--rule`。用户已明确确认且字段完整时可改为 `--status active`。生成后复核分类、适用范围、理由、例外和例子。
+
+## 批量 Inbox
+
+```bash
+python3 scripts/ingest_knowledge.py \
+  --kb /path/to/knowledge-base \
+  --all-inbox
+```
+
+也可把多个文件或目录作为位置参数传入。只处理 Markdown/TXT；跳过 README 和隐藏文件。原文件留在 inbox，副本进入 `sources/`。
+
+## 冲突裁决
+
+```bash
+python3 scripts/ingest_knowledge.py \
+  --kb /path/to/knowledge-base \
+  --resolve KBC-XXXXXXXXXXXX \
+  --decision keep-existing
+```
+
+决策可为 `keep-existing`、`activate-new`、`keep-both`。两者并存必须用 `--note` 写清已经分离的适用范围。未裁决规则保持 `pending-conflict`，不得调用。

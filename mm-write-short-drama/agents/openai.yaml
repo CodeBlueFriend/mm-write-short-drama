@@ -1,4 +1,4 @@
 interface:
   display_name: "短剧编剧"
-  short_description: "分阶段完成原创、改编、连续性审核与去 AI 味的短剧剧本工作流"
-  default_prompt: "Use $mm-write-short-drama to turn my idea or source material into a continuity-safe short-drama project, confirming the story bible before drafting episodes in batches."
+  short_description: "分阶段短剧原创改编、连续性审核与个人编剧知识库检索工作流"
+  default_prompt: "使用 $mm-write-short-drama 将我的创意或小说建立为连续性稳定的短剧项目，并只调用当前阶段相关的个人编剧知识。"
