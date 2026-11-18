@@ -60,13 +60,25 @@ python3 scripts/export_screenplay_docx.py \
 
 如需当前项目已确认的前置内容，额外传入 `--front-matter project/front-matter.md`。未传入时不输出前置信息，也不保留模板的中性占位段落。
 
+## 准备 Word 导出环境
+
+先复用 Codex 工作区提供的、能成功执行 `import docx` 的 Python。也可以用已经安装 `python-docx` 的 Python 3.10+。若两者都没有，在第一次需要导出时由 Codex 为当前项目创建独立虚拟环境，并按随附清单安装包。脚本与清单位于同一技能目录。以下命令适用于 macOS/Linux，Windows 的解释器路径为 `.drama/word-venv/Scripts/python.exe`。
+
+```bash
+python3 -m venv "$PROJECT/.drama/word-venv"
+"$PROJECT/.drama/word-venv/bin/python" -m pip install -r "$SKILL_DIR/scripts/requirements-word.txt"
+"$PROJECT/.drama/word-venv/bin/python" -c "import docx"
+```
+
+后续用通过检查的同一个解释器运行导出命令。首次安装 Python 包需要可达的包源。工作区已有可用文档渲染器时优先复用，其次用可用的 Word 或 LibreOffice 打开或渲染。没有可用渲染方式时，仍可导出并完成结构检查，并在交付说明中标明版式尚未目检。
+
 ## 导出与验收门
 
 1. 导出前确认当前批次每集都通过内容、连续性和格式审核。
-2. 使用 Codex 工作区依赖中的 Python 运行脚本；脚本依赖 `python-docx`。
-3. 在首次写入 Word 前，按 documents skill 的要求执行一次 artifact-operation 标记。
+2. 使用上一步确认能导入 `python-docx` 的 Python 运行脚本。
+3. 若使用提供 documents skill 的文档环境，首次写入 Word 前按该技能要求执行 artifact-operation 标记。
 4. 导出后重新打开 `.docx`，确认集数、顺序、各集首场和末场都完整，项目维护区、模板占位和参考剧本内容均未泄漏；核对字体、字号、黄色高亮、蓝色台词和真实页码字段。
-5. 使用 documents skill 的 `render_docx.py` 渲染最终文件，逐页查看 PNG。发现裁切、重叠、缺字或异常分页后，修改并重新渲染；只交付最新通过检查的 `.docx`。
+5. 用环境提供的 `render_docx.py` 或 Word、LibreOffice 逐页检查。发现裁切、重叠、缺字或异常分页时修正后复看。
 6. 若 macOS 上 `fc-match '宋体'` 错误匹配为不含中文字形的字体，使用任务临时 Fontconfig 配置，仅在渲染命令的环境变量中把它映射到 `Songti SC`。重新渲染确认中文可见，并检查最终 DOCX 的 `w:eastAsia` 声明仍为宋体，不得把空白渲染误判为内容丢失。
 
 纯版式模板维护、导出程序修改和中性占位预览不属于剧本创作，不触发剧情 Humanizer 或逐集创作状态迁移；仍需完成格式核对和渲染验收。真实剧本及新增前置正文继续遵守原有内容审核和 Humanizer 要求。

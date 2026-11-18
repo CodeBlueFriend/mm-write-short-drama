@@ -77,9 +77,9 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 ## 审核与交付
 
-原有审核和返修通过后、任何聊天返回、Markdown 保存或 Word 导出前，必须执行 [Humanizer 适配规则](references/humanizer-adapter.md)：保存草稿，读取与本 Skill 同级的 `humanizer/SKILL.md` 固定版本（路径与依赖见适配规则），由当前模型逐集/逐场执行编辑，再复核剧情信息、角色声纹、场次格式与连续性。读取规则、正则替换和填写状态都不算完成。失败时保留草稿并维持 `in_review`/`revision`，不得推进到 `approved`。
+原有审核和返修通过后、任何聊天返回、Markdown 保存或 Word 导出前，必须执行 [Humanizer 适配规则](references/humanizer-adapter.md)：保存草稿，读取本 Skill 随附的 [Humanizer 固定版规则](references/vendor/humanizer.md)，由当前模型逐集/逐场执行编辑，再复核剧情信息、角色声纹、场次格式与连续性。读取规则、正则替换和填写状态都不算完成。失败时保留草稿并维持 `in_review`/`revision`，不得推进到 `approved`。
 
-文件交付使用与本 Skill 同级的 `mm-humanizer-gate/scripts/humanizer_gate.py` 执行 `verify` 和 `record --adapter short-drama --attestation model-edit-complete`；导出前用 `check` 复用同一已处理版本。正文变化后哈希失配，必须重新处理。Word 只从验证成功的定稿 Markdown 生成，格式转换不再次改写。
+文件交付使用本 Skill 随附的 `scripts/humanizer_gate.py` 执行 `verify` 和 `record --adapter short-drama --attestation model-edit-complete`；导出前用 `check` 复用同一已处理版本。正文变化后哈希失配，必须重新处理。Word 只从验证成功的定稿 Markdown 生成，格式转换不再次改写。
 
 对每个问题给出：稳定 ID、位置、证据、等级、冲突来源、原因、影响范围、建议修法、状态和回归检查范围；结构见 `schemas/review-issue.schema.json`。审核报告增加“实际使用的知识规则 ID”和“不适用/被项目要求覆盖的规则”。P0/P1 必须为 0 或由用户明确接受；锁定事实冲突、角色提前获知、关键道具和时间线断裂必须为 0；重大改编必须有记录。评分只用于排序，不能抵消阻断问题。
 
@@ -91,4 +91,4 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 ## 脚本约定
 
-所有脚本仅负责初始化、依赖传播、状态迁移、上下文装配、字段校验、统计和文档导出，不用程序分数替代创作判断。状态 JSON 必须带 `schemaVersion`；上游 revision 改变后，下游在重新审核前保持 `stale`。知识库脚本只做确定性提取、启发式分类/冲突提示和检索；Codex 仍须语义复核知识卡。先运行 `python3 scripts/<name>.py --help` 查看参数；模板位于 `assets/`，复制后再填写，不直接覆盖模板。生成 `.docx` 时使用 Codex 工作区依赖提供的 Python 与 `python-docx`，并在首次文档写入前执行文档技能要求的 artifact-operation 标记；最终文件必须渲染为 PNG 并逐页检查。
+所有脚本仅负责初始化、依赖传播、状态迁移、上下文装配、字段校验、统计和文档导出，不用程序分数替代创作判断。状态 JSON 必须带 `schemaVersion`；上游 revision 改变后，下游在重新审核前保持 `stale`。知识库脚本只做确定性提取、启发式分类/冲突提示和检索；Codex 仍须语义复核知识卡。先运行 `python3 scripts/<name>.py --help` 查看参数；模板位于 `assets/`，复制后再填写，不直接覆盖模板。生成 `.docx` 时按 [Word 交付规则](references/word-delivery.md#准备-word-导出环境) 选用工作区 Python 或在项目内准备独立导出环境，按当前环境支持的渲染方式逐页检查。

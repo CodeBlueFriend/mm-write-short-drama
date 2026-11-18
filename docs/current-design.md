@@ -1,6 +1,6 @@
 # v1.2 工作流设计
 
-本文记录 v1.2.0 的实现与兼容范围。安装和升级步骤见 [v1.2 功能与升级说明](versions/v1.2.md)。历史设计保留在 [v1.1 知识库设计](knowledge-base-design-v1.1.md) 和 [版本说明](versions/v1.1.md) 中。
+本文记录 v1.2 系列的实现与兼容范围。最新安装与升级步骤见 [v1.2.1 说明](versions/v1.2.1.md)。历史设计保留在 [v1.1 知识库设计](knowledge-base-design-v1.1.md) 和 [版本说明](versions/v1.1.md) 中。
 
 ## 源码与数据边界
 
@@ -125,24 +125,13 @@ python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" \
 
 可选 `--front-matter ./projects/example/front-matter.md` 只接受用户明确提供、已审核的当前项目前置材料，使用前置标题和前置信息样式。不传入就不输出，也不从参考稿补齐简介或人物介绍。占位模板和纯版式程序维护不触发剧情创作状态或剧情 Humanizer。
 
-导出器依赖 `python-docx`。内容审核、Humanizer 记录和 Word 渲染验收由工作流执行，导出命令本身不自动证明这些门已经通过。最终 Word 应渲染为 PNG 逐页检查；缺少宋体时只对渲染环境临时映射 `Songti SC`，保留最终文件的宋体声明。
+导出器依赖 `python-docx`。内容审核、Humanizer 记录和 Word 渲染验收由工作流执行，导出命令本身不自动证明这些门已经通过。最终 Word 应用可用的文档工具逐页检查；缺少宋体时只对渲染环境临时映射 `Songti SC`，保留最终文件的宋体声明。
 
 ## 外部依赖与可移植路径
 
-多数索引、状态和知识库脚本只用 Python 标准库；Word 导出额外需要 `python-docx`。在 Codex 中使用工作区依赖提供的 Python 与包。PNG 渲染验收依赖文档技能及其渲染环境，不随本仓库提供。
+从 v1.2.1 开始，固定版 Humanizer 规则、MIT 许可与 Python 校验脚本都放在主技能安装目录里。无需额外安装两个同级技能。规则取自 `blader/humanizer@9862685f575c65a8247f90369951df1b3416e3d6`。Codex 逐集或逐场实际编辑，再用校验器比对草稿与终稿，并在项目内留下哈希记录。导出前核对当前稿与记录，正文有变化则重新编辑和校验。已有合格记录可以复用。[工作流与命令](../mm-write-short-drama/references/humanizer-adapter.md)
 
-Humanizer 是显式外部依赖，本仓库不是内容交付流程的自包含安装包。技能根使用 `$CODEX_HOME/skills`，未设置 `CODEX_HOME` 时使用 `~/.codex/skills`，约定同级安装：
-
-```text
-skills/
-├── mm-write-short-drama/
-├── humanizer/SKILL.md
-└── mm-humanizer-gate/scripts/humanizer_gate.py
-```
-
-规则固定到 `blader/humanizer@9862685f575c65a8247f90369951df1b3416e3d6`。由当前模型逐集/逐场执行编辑并保护事实、声纹和格式，再通过外部门工具 `verify`、`record --adapter short-drama --attestation model-edit-complete` 留下与内容哈希对应的记录。重复导出先 `check`；正文变化需重新处理，格式转换不再次改写。仅加载规则、正则替换或写入状态不能算模型编辑完成。
-
-缺少外部规则或门工具时，应明确提示安装对应 Skill，保留草稿和未通过状态，不能宣称内容交付门已通过。纯版式维护与中性预览不因此被当作剧本创作。
+多数脚本使用 Python 3.10+ 标准库。Word 导出优先复用已含 `python-docx` 的工作区 Python，缺失时在项目内创建虚拟环境并按随附清单安装。版式目检使用环境已有的文档渲染器、Word 或 LibreOffice。详见 [Word 交付规则](../mm-write-short-drama/references/word-delivery.md)。
 
 ## 旧项目与升级边界
 

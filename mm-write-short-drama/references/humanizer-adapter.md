@@ -2,11 +2,22 @@
 
 上游固定为 `blader/humanizer@9862685f575c65a8247f90369951df1b3416e3d6`（3.0.0，MIT）。本文件与上游规则分开维护。
 
-## 外部依赖与定位
+## 随附规则与校验工具
 
-从当前 Skill 安装目录的同级位置查找 `humanizer/SKILL.md` 与 `mm-humanizer-gate/scripts/humanizer_gate.py`。Codex 默认技能根为 `$CODEX_HOME/skills`；未设置 `CODEX_HOME` 时使用 `~/.codex/skills`。若本 Skill 安装在其他位置，以实际父目录为准，不使用开发者机器上的绝对路径。
+以实际安装的技能目录为基准，读取 [固定版本的规则](vendor/humanizer.md)，使用同一技能目录下的 `scripts/humanizer_gate.py`。规则和校验器都随技能分发，校验器仅使用 Python 标准库。上游规则按 [MIT 许可](vendor/humanizer-LICENSE) 分发，版本以 [固定提交](https://github.com/blader/humanizer/tree/9862685f575c65a8247f90369951df1b3416e3d6) 为准。
 
-这两项是单独安装的外部依赖，不随本仓库分发。规则版本必须与上述固定提交一致；缺少依赖或无法核对版本时，先完成可独立执行的结构工作并保留草稿，明确说明缺项，不得伪造 Humanizer 编辑或验证记录，也不得把真实正文标为已通过该交付门。纯格式模板预览不需要调用该内容审核门。
+逐集保存草稿，再由当前模型按下文实际编辑并复查。对每个最终 Markdown（含交付的前置正文）执行以下命令，路径按项目替换：
+
+```bash
+python3 "$SKILL_DIR/scripts/humanizer_gate.py" verify --draft "$DRAFT" --final "$FINAL"
+python3 "$SKILL_DIR/scripts/humanizer_gate.py" record \
+  --draft "$DRAFT" --final "$FINAL" --adapter short-drama \
+  --attestation model-edit-complete --log "$PROJECT/.humanizer/runs.jsonl"
+python3 "$SKILL_DIR/scripts/humanizer_gate.py" check \
+  --final "$FINAL" --log "$PROJECT/.humanizer/runs.jsonl"
+```
+
+每次导出前先检查全部定稿的记录。已有记录可沿用原路径（旧版也可能以终稿所在目录下的 `.humanizer/runs.jsonl` 为默认位置），正文与记录匹配时无需重做。变动后重新编辑并验收。原稿快照和哈希记录留在项目内。纯版式模板预览按 Word 规则验收即可。
 
 ## 编辑约束
 

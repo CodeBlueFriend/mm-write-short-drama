@@ -4,7 +4,7 @@
 
 写到第八集才发现，主角用来对质的证据第三集已经被别人拿走了。这个技能把人物知道什么、道具在谁手里、伏笔在哪一集兑现都记在项目里。隔几天换个对话，你可以从上次确认的进度接着写。
 
-[安装技能](#安装) · [跟做一个六集项目](#跟做一个六集项目) · [了解设计流程](#从创意到交付) · [下载 Word 版式样本](mm-write-short-drama/assets/screenplay-base-template.docx) · [联系开发者](#交流与反馈)
+[安装技能](#安装) · [四本书的五项写作能力](#四本书对应的五项写作能力) · [跟做一个六集项目](#跟做一个六集项目) · [了解设计流程](#从创意到交付) · [下载 Word 版式样本](mm-write-short-drama/assets/screenplay-base-template.docx) · [联系开发者](#交流与反馈)
 
 ## 先看看你能用它做什么
 
@@ -20,10 +20,10 @@
 
 ## 安装
 
-在 Codex 粘贴下面这条指令，安装稳定版 [v1.2.0](https://github.com/CodeBlueFriend/mm-write-short-drama/releases/tag/v1.2.0)。
+在 Codex 粘贴下面这条指令，一次安装稳定版 [v1.2.1](https://github.com/CodeBlueFriend/mm-write-short-drama/releases/tag/v1.2.1)。Humanizer 规则和校验工具随技能一起下载。
 
 ```text
-$skill-installer 从 https://github.com/CodeBlueFriend/mm-write-short-drama/tree/v1.2.0/mm-write-short-drama 安装技能
+$skill-installer 从 https://github.com/CodeBlueFriend/mm-write-short-drama/tree/v1.2.1/mm-write-short-drama 安装技能
 ```
 
 装好后，打开用来放原著和剧本的工作区，在对话中输入 `$mm-write-short-drama`，再说你想做什么。如果技能没有出现在列表里，重启 Codex。安装方式见 [Codex 技能文档](https://developers.openai.com/codex/skills#install-curated-skills-for-local-use)。
@@ -32,7 +32,7 @@ $skill-installer 从 https://github.com/CodeBlueFriend/mm-write-short-drama/tree
 <summary>从 GitHub 手动安装</summary>
 
 ```bash
-git clone --depth 1 --branch v1.2.0 \
+git clone --depth 1 --branch v1.2.1 \
   https://github.com/CodeBlueFriend/mm-write-short-drama.git
 mkdir -p "$HOME/.agents/skills/mm-write-short-drama"
 cp -R mm-write-short-drama/mm-write-short-drama/. "$HOME/.agents/skills/mm-write-short-drama/"
@@ -42,7 +42,7 @@ cp -R mm-write-short-drama/mm-write-short-drama/. "$HOME/.agents/skills/mm-write
 
 </details>
 
-随技能提供的项目与知识库脚本使用 Python 3.10 或更新版本。导出 Word 要安装 `python-docx`，交稿前还需要文档渲染环境来逐页检查。正式剧本交付依赖 `humanizer` 与 `mm-humanizer-gate`，请单独获取并装在与本技能同一目录层级。[查看依赖和版本要求](docs/current-design.md#外部依赖与可移植路径)
+从立项到交稿都用 `$mm-write-short-drama`。审完剧本后，Codex 会用随附规则复核对白和连戏，用随附脚本记录通过校验的稿件，再按本批集数导出一份 Word。脚本需要 Python 3.10 或更新版本。如果工作区没有 `python-docx`，Codex 可在首次导出时给项目建独立环境并联网安装；版式目检使用当前环境可用的文档渲染器、Word 或 LibreOffice。[运行环境与导出步骤](mm-write-short-drama/references/word-delivery.md#准备-word-导出环境)
 
 ## 跟做一个六集项目
 
@@ -122,6 +122,24 @@ flowchart TD
 
 把技巧粘贴到对话，或把文本放进 `knowledge-base/inbox/`。比如你常用「集尾承诺要在下一集兑现」，就可以把它记成一张卡，保留出处，注明在哪些题材的分集设计中使用。重复录入会留痕，疑似冲突等你裁决。写到分集时才检索这类启用卡，审核可追溯实际用过的规则。五项能力入口覆盖梗概、结构、秘密管理、集间兑现和对白行动。[知识库入门](knowledge-base/README.md) · [规则如何被检索](docs/current-design.md#五项写作能力与知识来源)
 
+### 四本书对应的五项写作能力
+
+开发者从四本书的蒸馏材料中整理了五个短剧写作入口。写到哪里卡住，就用对应的方法查稿。比如第二集的悬念没人接，可以直接把集尾和第三集开场交给 Codex 对读。
+
+| 书目 | 能力 | 什么时候用 |
+| --- | --- | --- |
+| 《救猫咪：电影编剧指南》 | 一句梗概 | 创意说得出题材却说不清主角要做什么。先厘清目标、阻力和失败代价。 |
+| 《救猫咪：电影编剧指南》 | 整季节拍 | 中段反复或结局缺铺垫。检查前因、人物选择和改变的局面，再分配到各集。 |
+| 《编剧路线图》 | 人物秘密 | 角色提前知道真相，或反转缺线索。对照人物和观众的知情范围，安排揭露点和后果。 |
+| 《从零开始学短剧创作》 | 上下集卡点兑现 | 上集给了悬念，下集开场却没接住。把集尾承诺和下集第一个行动放在一起检查。 |
+| 罗伯特·麦基《对白》 | 用对白做事 | 角色说了很多，关系和局面却毫无变化。逐轮检查各自的目的、言语策略和对方反应。 |
+
+```text
+$mm-write-short-drama 帮我对读第 3 集结尾和第 4 集开场，看看观众等的答案有没有推进。给一组可直接替换的集尾和开场，其余剧情保留。
+```
+
+安装后即可调用这些能力入口。个人知识卡和书籍资料留在独立知识库，检索时选已启用且适合当前任务的卡。人物秘密的书籍卡还在核对来源，现阶段由连续性流程检查谁在何时掌握了线索。卡点兑现的步骤来自短剧项目实践，书目用于定位相关主题。[能力入口与来源边界](mm-write-short-drama/references/writing-capabilities.md)
+
 ### 导出给演员和制片的 Word
 
 以「第 01 至 03 集」为例，导出器把三集合进 `项目名_第01-03集.docx`。Word 保留场次、动作和对白等剧本正文，项目控制信息与连续性维护区留在工作区。版式采用宋体、黄色场次与人物提示、蓝色台词和自动页码。可选的前置信息来自当前项目已审核的材料。模板示例使用中性占位文字。[下载 Word 版式样本](mm-write-short-drama/assets/screenplay-base-template.docx) · [交付和导出规则](mm-write-short-drama/references/word-delivery.md)
@@ -133,7 +151,7 @@ flowchart TD
 | 刚装好，想照着提示词试跑 | [可复制的测试提示](docs/test-prompts.md) |
 | 想直接管理状态、索引、校验与导出 | [命令行使用手册](docs/usage.md) |
 | 想维护个人写作知识库 | [知识库目录与维护](knowledge-base/README.md) |
-| 正在升级或接手旧项目 | [v1.2 功能与升级说明](docs/versions/v1.2.md) |
+| 正在升级或接手旧项目 | [v1.2.1 安装与升级说明](docs/versions/v1.2.1.md) · [v1.2 功能说明](docs/versions/v1.2.md) |
 | 想读工作流、脚本、状态和依赖设计 | [工作流设计](docs/current-design.md) |
 | 想看以前的版本 | [完整变更记录](CHANGELOG.md) · [v1.1](docs/versions/v1.1.md) · [v1.0](docs/versions/v1.0.md) |
 
