@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "referenceSha256": "66ab3f7330bc9067cd3f1734dd875aa7264394a39ddfa76dac3d2bb4f6381486",
+  "importedAt": "2026-11-18",
+  "scope": "Formatting only; all source screenplay text removed",
+  "template": "screenplay-base-template.docx",
+  "templateSha256": "90a8b5aabd2f196b6866c926ff79fb53c0ab5121f0fb3f7156b49a0c49f10bbd",
+  "sourceParagraphStyles": {
+    "剧本标题": "ScriptTitle",
+    "剧集标题": "EpisodeLabel",
+    "场次标题": "ScriptScene",
+    "人物行": "ScriptCast",
+    "剧本文本": "ScriptAction",
+    "对白文本": "ScriptDialog",
+    "声音文本": "ScriptSound",
+    "前置信息": "ScriptMetadata",
+    "前置标题": "ScriptPrefaceHead"
+  },
+  "optionalPreface": "Only supplied current-project Markdown; never auto-filled from reference",
+  "referenceFile": "《下岗大厨：一把马勺成首富》（30集）(1).docx"
+}

@@ -21,3 +21,5 @@
 | `version` | 正整数；显式状态/内容变化时递增 |
 
 `active` 才可默认检索。稳定 ID 和旧版本不得被新规则静默覆盖；状态变化前保存归档快照。详细流程读取 [knowledge-base.md](knowledge-base.md)。
+
+书籍交接卡沿用上述字段，并用 `capability_id` 保留原仓颉能力 ID（多卡可映射同一能力）。增加 `source_note/source_url/source_verification` 记录原则归属与核实范围，用 `triggers/diagnosis/action/output_contract/self_check/adaptation` 记录触发、诊断、动作、输出、自检和短剧适配。带 capability_id 的 active 卡必须补齐这些文本字段。原始 source 仍保存交接稿及其哈希，不能用网页链接替换不可变原始材料。使用方式见 [writing-capabilities.md](writing-capabilities.md)。

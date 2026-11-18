@@ -1,4 +1,4 @@
 interface:
   display_name: "短剧编剧"
-  short_description: "分阶段短剧原创改编、连续性审核与个人编剧知识库检索工作流"
-  default_prompt: "使用 $mm-write-short-drama 将我的创意或小说建立为连续性稳定的短剧项目，并只调用当前阶段相关的个人编剧知识。"
+  short_description: "分阶段短剧创作、连续性审核与批次合并 Word 交付"
+  default_prompt: "使用 $mm-write-short-drama 将我的创意或小说建立为连续性稳定的短剧项目，并把本批全部集数合并为一个 Word 剧本文档。"

@@ -72,6 +72,13 @@ def context_block(cards: list[dict[str, Any]]) -> str:
         rule = str(card.get("rule", "")).rstrip("。；;，, ")
         suffix = f"；例外：{'、'.join(str(item) for item in exceptions)}" if exceptions else ""
         lines.append(f"- **{card['id']}** [{card.get('priority', '')}] {rule}{suffix}。")
+        for key, label in (("capability_id", "原能力"), ("source_note", "来源范围"),
+                           ("source_url", "来源链接"), ("source_verification", "核验"),
+                           ("triggers", "触发"), ("diagnosis", "诊断"), ("action", "动作"),
+                           ("output_contract", "输出"), ("self_check", "自检"),
+                           ("adaptation", "适配")):
+            if card.get(key):
+                lines.append(f"  - {label}：{card[key]}")
     lines.extend(
         [
             "",
@@ -89,6 +96,7 @@ def main() -> int:
     parser.add_argument("--kb", type=Path, help="Knowledge-base root")
     parser.add_argument("--stage", help="planning/structure/episode/scene/dialogue/review/adaptation")
     parser.add_argument("--category")
+    parser.add_argument("--capability", help="Exact original capability ID; other filters still apply")
     parser.add_argument("--genre")
     parser.add_argument("--production-mode")
     parser.add_argument("--status", default="active", help="Comma-separated statuses; defaults to active only")
@@ -110,6 +118,8 @@ def main() -> int:
     selected = []
     for card in cards:
         if card.get("status") not in statuses:
+            continue
+        if args.capability and card.get("capability_id") != args.capability:
             continue
         if args.category and str(card.get("category")) != args.category:
             continue

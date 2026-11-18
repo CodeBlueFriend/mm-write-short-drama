@@ -78,6 +78,11 @@ def validate_card(root: Path, card: dict[str, Any], errors: list[str], warnings:
                 if digest != source.get("sha256"):
                     errors.append(f"{label}: source hash changed: {path}")
     if card.get("status") == "active":
+        if card.get("capability_id"):
+            for field in ("source_note", "source_url", "source_verification", "triggers",
+                          "diagnosis", "action", "output_contract", "self_check", "adaptation"):
+                if not isinstance(card.get(field), str) or not card[field].strip():
+                    errors.append(f"{label}: active capability card requires {field}")
         if str(card.get("rationale", "")).startswith("待补充"):
             warnings.append(f"{label}: active card still has placeholder rationale")
         if not card.get("positive_example") or not card.get("negative_example"):

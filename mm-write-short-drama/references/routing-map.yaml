@@ -1,0 +1,44 @@
+schemaVersion: "1.0.0"
+source_modes:
+  original:
+    label: 原创
+    required_references: [workflow.md, original-creation.md]
+    required_artifacts: [00-project-brief.md, 03-original-discovery.md, 04-story-bible.md]
+  adaptation:
+    label: 改编
+    required_references: [workflow.md, adaptation.md]
+    required_artifacts: [00-project-brief.md, 01-source-index.md, 02-source-truth.md, 03-adaptation-map.md, 04-story-bible.md]
+  source_remix:
+    label: 素材再创作
+    required_references: [workflow.md, adaptation.md]
+    required_artifacts: [00-project-brief.md, 01-source-index.md, 02-source-truth.md, 03-adaptation-map.md, 04-story-bible.md]
+production_modes:
+  live_action:
+    label: 真人
+    review_reference: production-modes.md
+  ai_drama:
+    label: AI
+    review_reference: production-modes.md
+  hybrid:
+    label: 混合
+    review_reference: production-modes.md
+  unspecified:
+    label: 暂不限
+    review_reference: null
+orientations:
+  vertical: 竖屏
+  horizontal: 横屏
+  custom: 自定义
+delivery_scopes:
+  diagnosis: 诊断
+  outline: 大纲
+  episodes: 分集
+  screenplay: 剧本
+  review: 审核
+  revision: 改写
+  knowledge: 技巧入库
+  unspecified: 未指定
+review_modes:
+  strict: 严格确认
+  assisted: 辅助确认
+  automatic: 自动推进

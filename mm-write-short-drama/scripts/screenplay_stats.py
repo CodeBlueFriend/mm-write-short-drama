@@ -10,7 +10,10 @@ from collections import Counter
 from pathlib import Path
 
 
-SCENE = re.compile(r"^##\s+\d+-\d+\s+(?:内景|外景|内/外景|外/内景)", re.M)
+SCENE = re.compile(
+    r"^##\s+\d+-\d+\s+(?:(?:日|夜|晨|早|午|晚|黄昏|清晨|傍晚)\s+(?:内|外|内/外|外/内)|(?:内景|外景|内/外景|外/内景))",
+    re.M,
+)
 DIALOGUE = re.compile(r"^([^#|\s][^：:\n]{0,24})[：:]\s*(.+)$")
 CHARACTERS = re.compile(r"^人物[：:]\s*(.+)$")
 

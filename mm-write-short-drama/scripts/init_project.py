@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
-"""Create a short-drama project skeleton without overwriting existing files."""
+"""Create a versioned short-drama project skeleton without overwriting files."""
 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import shutil
 from pathlib import Path
 
 
 CSV_HEADERS = {
-    "timeline.csv": "event_id,date,time,event,location,participants,duration,source_episode,status\n",
-    "character-state.csv": "episode,character,physical,emotion,relationships,resources,knowledge_summary,current_goal,status\n",
-    "knowledge-state.csv": "fact_id,character,knowledge,learned_episode,learned_scene,source,certainty,status\n",
-    "props-ledger.csv": "prop_id,prop,current_holder,location,condition,last_event,source_episode,status\n",
-    "hooks-ledger.csv": "hook_id,hook,introduced_episode,progress_episode,planned_payoff,actual_payoff,status,notes\n",
+    "timeline.csv": "event_id,date,start_time,end_time,event,location,participants,duration,source_episode,source_scene,depends_on,status\n",
+    "character-state.csv": "episode,scene,character,location,physical,emotion,relationships,resources,current_goal,wardrobe,source,status\n",
+    "knowledge-state.csv": "fact_id,character,knowledge,learned_episode,learned_scene,source,certainty,supersedes,status\n",
+    "relationships.csv": "relationship_id,episode,scene,party_a,party_b,trust,power,intimacy,public_status,private_status,change,source,status\n",
+    "props-ledger.csv": "prop_id,prop,current_holder,location,condition,last_event,source_episode,source_scene,provenance,status\n",
+    "evidence.csv": "evidence_id,evidence,created_episode,created_scene,current_holder,proves,known_by,chain_of_custody,source,status\n",
+    "hooks-ledger.csv": "hook_id,setup_episode,hook_episode,type,audience_question,promise,answer_owner,resolve_by,actual_resolution,status,evidence,risk\n",
+    "foreshadowing.csv": "foreshadow_id,setup,setup_episode,setup_scene,reinforcement,payoff_by,actual_payoff,status,evidence\n",
 }
 
 
@@ -24,10 +29,47 @@ def write_new(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def write_json(path: Path, value: dict) -> None:
+    write_new(path, json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+
+
+def artifact_specs(source_mode: str, through: str) -> dict[str, dict]:
+    specs: dict[str, dict] = {
+        "projectBrief": {"path": "00-project-brief.md", "dependsOn": []},
+        "canon": {"path": "continuity/canon.yaml", "dependsOn": ["00-project-brief.md"]},
+        "lockedDecisions": {"path": "locked-decisions.md", "dependsOn": []},
+        "changeLog": {"path": "change-log.md", "dependsOn": []},
+    }
+    if through in {"story-bible", "full"}:
+        if source_mode == "original":
+            specs["originalDiscovery"] = {"path": "03-original-discovery.md", "dependsOn": ["00-project-brief.md"]}
+            story_deps = ["00-project-brief.md", "03-original-discovery.md"]
+        else:
+            specs["sourceIndex"] = {"path": "01-source-index.md", "dependsOn": ["00-project-brief.md"]}
+            specs["sourceTruth"] = {"path": "02-source-truth.md", "dependsOn": ["01-source-index.md"]}
+            specs["adaptationMap"] = {"path": "03-adaptation-map.md", "dependsOn": ["02-source-truth.md"]}
+            story_deps = ["00-project-brief.md", "03-adaptation-map.md"]
+        specs["storyBible"] = {"path": "04-story-bible.md", "dependsOn": story_deps}
+    if through == "full":
+        specs["seasonArchitecture"] = {"path": "05-season-architecture.md", "dependsOn": ["04-story-bible.md"]}
+        specs["episodeMatrix"] = {"path": "06-episode-matrix.csv", "dependsOn": ["04-story-bible.md", "05-season-architecture.md"]}
+        for name in CSV_HEADERS:
+            key = "continuity_" + name.removesuffix(".csv").replace("-", "_")
+            specs[key] = {"path": f"continuity/{name}", "dependsOn": ["04-story-bible.md", "06-episode-matrix.csv"]}
+    return specs
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("project_dir", type=Path, help="New or empty project directory")
-    parser.add_argument("--mode", choices=("original", "adaptation"), default="original")
+    parser.add_argument("--mode", choices=("original", "adaptation", "source-remix"), default="original", help="Source route; name preserved for CLI compatibility")
+    parser.add_argument("--production-mode", choices=("live_action", "ai_drama", "hybrid", "unspecified"), default="unspecified")
+    parser.add_argument("--orientation", choices=("vertical", "horizontal", "custom"), default="vertical")
+    parser.add_argument("--delivery-scope", choices=("diagnosis", "outline", "episodes", "screenplay", "review", "revision", "knowledge", "unspecified"), default="unspecified")
+    parser.add_argument("--review-mode", choices=("strict", "assisted", "automatic"), default="strict")
+    parser.add_argument("--language", default="zh-CN")
+    parser.add_argument("--target-market", action="append", default=[], help="Repeat for multiple markets")
+    parser.add_argument("--total-episodes", type=int)
     parser.add_argument(
         "--through",
         choices=("brief", "story-bible", "full"),
@@ -35,6 +77,9 @@ def main() -> int:
         help="Create files only through the requested workflow stage",
     )
     args = parser.parse_args()
+    if args.total_episodes is not None and args.total_episodes < 1:
+        parser.error("--total-episodes must be positive")
+    source_mode = args.mode.replace("-", "_")
 
     root = args.project_dir.expanduser().resolve()
     if root.exists() and any(root.iterdir()):
@@ -45,7 +90,7 @@ def main() -> int:
     copies = {"project-brief-template.md": "00-project-brief.md"}
     if args.through in {"story-bible", "full"}:
         copies["story-bible-template.md"] = "04-story-bible.md"
-        if args.mode == "original":
+        if source_mode == "original":
             copies["original-discovery-template.md"] = "03-original-discovery.md"
         else:
             copies["source-truth-template.md"] = "02-source-truth.md"
@@ -56,10 +101,15 @@ def main() -> int:
     for source_name, target_name in copies.items():
         shutil.copyfile(assets / source_name, root / target_name)
 
-    if args.mode == "adaptation" and args.through in {"story-bible", "full"}:
+    if source_mode in {"adaptation", "source_remix"} and args.through in {"story-bible", "full"}:
         write_new(root / "01-source-index.md", "# 原著索引\n\n")
 
-    canon = """project:\n  title: \"\"\n  mode: \"%s\"\n  status: draft\nimmutable_facts: []\nconfirmed_facts: []\ncurrent_plans: []\ndiscarded: []\n""" % args.mode
+    canon = (
+        'schemaVersion: "1.0.0"\nproject:\n  title: ""\n'
+        f'  sourceMode: "{source_mode}"\n  productionMode: "{args.production_mode}"\n'
+        f'  orientation: "{args.orientation}"\n  status: draft\n'
+        "immutable_facts: []\nconfirmed_facts: []\ncurrent_plans: []\ndiscarded: []\n"
+    )
     write_new(root / "continuity" / "canon.yaml", canon)
     if args.through == "full":
         for name, header in CSV_HEADERS.items():
@@ -68,10 +118,39 @@ def main() -> int:
     write_new(root / "locked-decisions.md", "# 锁定决策\n\n")
     write_new(root / "change-log.md", "# 变更记录\n\n")
     if args.through == "full":
-        for directory in ("episodes", "reviews", "context-packs"):
+        for directory in ("episodes", "deliverables", "reviews", "qc", "context-packs"):
             (root / directory).mkdir(parents=True, exist_ok=True)
 
-    print(f"Created {args.mode} short-drama project through {args.through}: {root}")
+    specs = artifact_specs(source_mode, args.through)
+    indexed = {
+        key: {"path": spec["path"], "revision": 1, "status": "draft", "dependsOn": spec["dependsOn"], "validators": ["validate_project.py"], "contentHash": None}
+        for key, spec in specs.items()
+    }
+    state_artifacts = {
+        key: {"path": value["path"], "revision": value["revision"], "status": value["status"], "dependsOn": value["dependsOn"]}
+        for key, value in indexed.items()
+    }
+    project_id = "drama-" + hashlib.sha256(root.name.encode("utf-8")).hexdigest()[:12]
+    write_json(root / ".drama" / "project-state.json", {
+        "schemaVersion": "1.0.0", "projectId": project_id, "projectRevision": 1,
+        "sourceMode": source_mode, "productionMode": args.production_mode,
+        "orientation": args.orientation, "deliveryScope": args.delivery_scope,
+        "reviewMode": args.review_mode, "language": args.language,
+        "targetMarkets": args.target_market, "platformProfiles": [],
+        "currentPhase": "brief", "totalEpisodes": args.total_episodes,
+        "lockedDecisionsRevision": 0, "artifacts": state_artifacts, "episodes": {}
+    })
+    write_json(root / ".drama" / "artifact-index.json", {"schemaVersion": "1.0.0", "projectRevision": 1, "artifacts": indexed})
+    write_new(root / ".drama" / "invalidation-log.jsonl", "")
+    write_json(root / ".humanizer" / "policy.json", {
+        "schemaVersion": "1.0.0", "required": True,
+        "humanizerCommit": "9862685f575c65a8247f90369951df1b3416e3d6",
+        "adapter": "short-drama", "adapterVersion": "1.0.0",
+        "statusRule": "Only a verified model edit may be completed",
+    })
+    (root / ".humanizer" / "originals").mkdir(parents=True, exist_ok=True)
+
+    print(f"Created {source_mode} short-drama project through {args.through}: {root}")
     return 0
 
 

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mm-write-short-drama/schemas/project-state.schema.json",
+  "title": "Short drama project state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "projectId", "projectRevision", "sourceMode",
+    "productionMode", "orientation", "deliveryScope", "reviewMode", "language", "targetMarkets",
+    "currentPhase", "totalEpisodes", "lockedDecisionsRevision",
+    "artifacts", "episodes"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "1.0.0"},
+    "projectId": {"type": "string", "minLength": 1},
+    "projectRevision": {"type": "integer", "minimum": 1},
+    "sourceMode": {"enum": ["original", "adaptation", "source_remix"]},
+    "productionMode": {"enum": ["live_action", "ai_drama", "hybrid", "unspecified"]},
+    "orientation": {"enum": ["vertical", "horizontal", "custom"]},
+    "deliveryScope": {"enum": ["diagnosis", "outline", "episodes", "screenplay", "review", "revision", "knowledge", "unspecified"]},
+    "reviewMode": {"enum": ["strict", "assisted", "automatic"]},
+    "language": {"type": "string", "minLength": 2},
+    "targetMarkets": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "platformProfiles": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "default": []},
+    "currentPhase": {
+      "enum": [
+        "brief", "source_analysis", "adaptation_strategy", "story_bible",
+        "season_architecture", "episode_matrix", "episode_planning",
+        "episode_drafting", "review", "revision", "approved", "export"
+      ]
+    },
+    "totalEpisodes": {"type": ["integer", "null"], "minimum": 1},
+    "lockedDecisionsRevision": {"type": "integer", "minimum": 0},
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/artifactState"}
+    },
+    "episodes": {
+      "type": "object",
+      "patternProperties": {"^[0-9]{3}$": {"$ref": "#/$defs/episodeState"}},
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "artifactState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "revision", "status", "dependsOn"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "revision": {"type": "integer", "minimum": 0},
+        "status": {"enum": ["draft", "in_review", "approved", "stale", "unknown"]},
+        "dependsOn": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "episodeState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "planRevision", "scriptRevision", "reviewRevision",
+        "basedOnStoryBibleRevision", "basedOnMatrixRevision", "openBlockingIssues"
+      ],
+      "properties": {
+        "status": {"enum": ["not_started", "planned", "draft", "in_review", "revision", "approved", "stale"]},
+        "planRevision": {"type": "integer", "minimum": 0},
+        "scriptRevision": {"type": "integer", "minimum": 0},
+        "reviewRevision": {"type": "integer", "minimum": 0},
+        "basedOnStoryBibleRevision": {"type": "integer", "minimum": 0},
+        "basedOnMatrixRevision": {"type": "integer", "minimum": 0},
+        "openBlockingIssues": {"type": "integer", "minimum": 0},
+        "lastUpdated": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  }
+}

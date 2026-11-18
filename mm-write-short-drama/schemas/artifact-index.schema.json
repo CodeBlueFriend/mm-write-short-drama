@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mm-write-short-drama/schemas/artifact-index.schema.json",
+  "title": "Short drama artifact dependency index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "projectRevision", "artifacts"],
+  "properties": {
+    "schemaVersion": {"const": "1.0.0"},
+    "projectRevision": {"type": "integer", "minimum": 1},
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "revision", "status", "dependsOn", "validators"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "revision": {"type": "integer", "minimum": 0},
+          "status": {"enum": ["draft", "in_review", "approved", "stale", "unknown"]},
+          "dependsOn": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "validators": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "contentHash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    }
+  }
+}

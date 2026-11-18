@@ -1,0 +1,39 @@
+# 项目状态、依赖与失效传播
+
+## 三个机器状态文件
+
+- `.drama/project-state.json`：项目修订、路由、当前阶段、单集状态和关键上游版本。
+- `.drama/artifact-index.json`：产物路径、revision、审核状态和 `dependsOn` 依赖图。
+- `.drama/invalidation-log.jsonl`：每次失效传播的追加日志；不得回写或删除旧事件。
+
+它们是项目文件事实源的一部分，但不取代剧本文本和连续性账本。所有 JSON 都必须有 `schemaVersion`；对应结构见 `schemas/`。
+
+## 恢复与提交
+
+开始工作先运行 `scripts/validate_state.py <project>`。读取当前状态后，只加载本任务需要的上游产物。每个完成的产物单独增加 revision；每集单独提交状态，不把批次当成不可分割事务。
+
+单集状态机：
+
+```text
+not_started → planned → draft → in_review → approved
+                              ↘ revision → in_review
+approved/stale → planned（完成影响分析并获得用户批准后重建）
+```
+
+使用 `scripts/update_episode_state.py` 执行迁移。进入 `approved` 前，`openBlockingIssues` 必须为 0，且必须记录依据的故事圣经和分集矩阵 revision。
+
+## 上游修改
+
+先运行：
+
+```bash
+python3 scripts/impact_analysis.py PROJECT --changed 04-story-bible.md
+```
+
+默认只报告直接和间接依赖，不修改项目。向用户说明影响并取得批准后，才加 `--apply`：受影响产物标记为 `stale`，事件追加到失效日志。之后只重建受影响范围，并复跑报告指定的审核器。
+
+不得用更新时间猜依赖，不得静默重写整个项目，不得把未受影响文件顺手改写。锁定决定未解锁时，即使被标记为受影响也只能报告，不能覆盖。
+
+## 旧项目迁移
+
+旧项目缺少 `.drama/` 时，先根据现存文件生成迁移草案，把无法证明的 revision、批准状态和依赖标为 unknown/draft；不得因为文件存在就推断其已批准。用户确认迁移草案后再写入状态文件。
