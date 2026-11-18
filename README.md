@@ -1,69 +1,85 @@
 # mm-write-short-drama（短剧编剧 Codex Skill）
 
-一个面向长流程短剧创作的 Codex Skill。它支持原创与小说/故事改编，通过故事圣经、整季结构、分集矩阵、场次卡、连续性账本和证据化审核，生成上下文连贯、人物稳定、可表演、可制作的短剧剧本。当前开发版在 v1.1 个人知识库基础上增加版本化项目状态、依赖失效传播、五项写作能力检索和批次合并 Word 交付。
+从小说、创意或近期市场参考开始，先把故事讲到结局，审过底稿和大纲，等创作者明确确认这一版，再分批写成可表演的短剧。每批交付一个含完整项目介绍的 Word；正文审读、事实复核和导出实物验收都对应实际文件版本。
 
-它不会一次性盲写整季，也不负责分镜、图片/视频提示词、剪辑或发布。首版交付边界是“可进入制片或分镜环节的定稿剧本”。
+当前开发版保留 v1.1 个人知识库、故事圣经、分集矩阵、场次卡与连续性账本，新增三来源入口、大纲确认、两遍审读、五书24项方法摘要及正式交付门。它负责剧本，不负责分镜、生图、视频生成、剪辑或发布。
 
-## 功能
+## 从哪里开始
 
-- 从一句创意、人物、冲突或结局建立原创项目；
-- 将小说、故事、梗概或真实事件拆解并改编为短剧；
-- 产出项目启动单、故事圣经、整季结构、分集矩阵、场次卡和标准剧本；
-- 使用人物、知识、时间线、道具和伏笔账本维护跨集连续性；
-- 分批写 3—5 集并按结构、人物、连续性、台词、制作等维度返修；
-- 对对白做基于动机、潜台词和人物声纹的“去 AI 味”处理；
-- 接收新的编剧技巧，保留来源、拆分原子规则、检测冲突并按适用范围调用；
-- 支持对话粘贴或批量 Inbox 录入，使用 Markdown 知识卡和 JSONL 索引持续积累个人知识；
-- 在策划、结构、分集、场景、对白、改编和审核阶段只检索相关 active 规则，并记录实际使用的规则 ID；
-- 用 `.drama/` 状态、revision 和依赖索引恢复工作，逐集提交，先分析上游变更再标记受影响产物；
-- 从稿件证据选择梗概、结构、秘密、集间兑现和对白行动方法，保留能力 ID、来源和核验范围；
-- 按基础模板把本批全部集数合并为一个 Word，只继承模板格式，支持当前项目已审核的可选前置信息；
-- 评估真人拍摄、AI 真人剧、AI 漫剧或混合制作风险。
+三种入口共用“故事底稿→底稿审读→大纲→大纲审读→用户确认”的过程。用户已经说明来源时直接选中，不必重复问一次。
 
-当前源码入口、状态机、依赖、交付门和安装边界见 [当前开发版设计](docs/current-design.md)。历史知识库架构、流程图和原创/改编示例保留在 [v1.1 个人编剧知识库系统设计](docs/knowledge-base-design-v1.1.md)。
+| 来源 | 普通指令示例 | 在开始写正文前交付 |
+|---|---|---|
+| 小说改编 | `把我提供的小说前五章改成6集真人短剧，先给大纲。` | 原著版本、章节定位、可用范围和授权状态，改编取舍与从开头讲到结局的故事底稿；未提供后续注明拟改编。 |
+| 自主创意 | `一个替人道歉的代理人，被迫替失踪十年的父亲向全城人道歉。帮我做6集短剧。` | 保留原始创意与锁定项，补足人物当下必须做的事、失败、取舍和结果，审后给大纲。 |
+| 检索近期爆款后创作 | `参考近30天国内平台的家庭关系短剧，先查可见材料，再构思新人物的新故事。` | 检索日期、窗口、平台地区、榜期与指标、链接和实际读到的内容层级，参考差异表与新故事。只有宣发就按宣发分析，热度不能核实就标待核。 |
 
-公开源码只分发流程、程序、通用模板、设计和测试，不包含用户项目剧本、原参考剧本正文或私人知识资料。个人项目与知识库新增内容留在用户工作区。
-
-## 版本与升级记录
-
-当前稳定版本和 `VERSION` 仍为 `v1.1.0`；仓库当前源码包含 `Unreleased` 开发更新，尚未发布新的稳定版。需要复现稳定版时使用对应 Git 标签。仓库同时保留每个正式版本的功能介绍、安装方式、使用命令和能力边界：
-
-- [全部升级记录](CHANGELOG.md)
-- [当前开发版设计与兼容边界](docs/current-design.md)
-- [v1.1 功能与使用说明](docs/versions/v1.1.md)
-- [v1.0 功能与使用说明](docs/versions/v1.0.md)
-
-Git 标签用于复现对应版本；升级到新版时只替换 Skill 本体，不覆盖个人 `knowledge-base/` 或已有短剧项目。
-
-## 安装
-
-### 方法一：安装当前开发版
-
-开发更新位于 `codex/v1.1-knowledge-base` 分支；远程默认 `main` 仍为 v1.1.0，安装当前文档描述的新能力时需明确指定开发分支：
-
-```bash
-SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
-mkdir -p "$SKILLS_DIR"
-git clone --branch codex/v1.1-knowledge-base \
-  https://github.com/CodeBlueFriend/mm-write-short-drama.git /tmp/mm-write-short-drama-repo
-mkdir -p "$SKILLS_DIR/mm-write-short-drama"
-cp -R /tmp/mm-write-short-drama-repo/mm-write-short-drama/. "$SKILLS_DIR/mm-write-short-drama/"
+```mermaid
+flowchart TD
+    S{"选择创作来源"} --> A["小说改编"]
+    S --> B["自主创意"]
+    S --> C["检索近期爆款"]
+    A --> D["用梗概方法写故事底稿"]
+    B --> D
+    C --> D
+    D --> E{"底稿通读"}
+    E -->|退修| D
+    E -->|通过| F["用进展纠葛与人物抉择构建大纲"]
+    F --> G{"大纲通读"}
+    G -->|退修| F
+    G -->|通过| H{"用户确认此版"}
+    H -->|修改意见| F
+    H -->|确认| I["锁定大纲版本"]
 ```
 
-若要安装稳定版，把上面的 `git clone` 命令替换为以下命令，并按 [v1.1 说明](docs/versions/v1.1.md) 使用其功能：
+呈给创作者的大纲包括一句话故事、连读梗概、主要人物目标与变化、分阶段因果、高潮结局、核心伏笔及兑现位置，同时写明总集数、单集时长和本次范围。严格、辅助、自动三种工作模式都必须停在这一版大纲的人工确认点。用户只要大纲时，在此结束。
 
-```bash
-git clone --branch v1.1.0 \
-  https://github.com/CodeBlueFriend/mm-write-short-drama.git /tmp/mm-write-short-drama-repo
+“继续”“看看”“自动推进”不替代确认。记录用户确认原话、对话定位、时间、范围和当前内容hash；上游变动后旧确认失效，重启仍从等待点恢复。
+
+## 确认之后怎么写
+
+```mermaid
+flowchart TD
+    A["已确认的大纲"] --> B["分集承接与场景转折分析"]
+    B --> C["按人物意图写动作和对白"]
+    C --> D{"批次审稿"}
+    D -->|返修| B
+    D -->|通过| E["按需润色并核对差异"]
+    E --> F{"最终正文通读与复核"}
+    F -->|结构或人物问题| B
+    F -->|表述失真| E
+    F -->|通过| G["组装前置模块与 Word"]
+    G --> H{"导出实物验收"}
+    H -->|缺项或排版错误| G
+    H -->|正文不一致| F
+    H -->|通过| I["交付本批或全剧"]
 ```
 
-重新打开 Codex 或启动一个新任务，让 Skill 列表刷新。看到“短剧编剧”即安装成功。
+默认每批3—5集。先生成场次和行动，再写对白；每集用真实正文回填人物决定、另一条可走的路、可见结果和下一集承接。保留能改变关系的静场。返修涉及已确认的主角目标、核心冲突、重大转折或结局时，回到图一重审并重新确认。
 
-如果已有旧版本，先备份其中自行增加的技巧，再用新版 `mm-write-short-drama/` 目录替换。不要直接覆盖仍在使用的短剧项目目录；项目数据和 Skill 本体应分开保存。
+方法必须影响具体稿件。实际合成示范《旧伞借还》中，大纲把“赶已付费拼车”与“承担车费及新伞损失，留下共同修伞”写成可执行的选择；场次落实为关提醒、取消等待、拆红伞；对白从“看不出来就行”变为“剪开这儿，补多大一块？”。[查看结构、场次与对白的实际交付片段](docs/examples/旧伞借还-method-trace.md)。示范使用软件模拟确认，实际产物不替代匿名比较的效果结论。
 
-`knowledge-base/` 不复制进 Skill 安装目录。把它保留在长期工作区，并在项目启动单填写绝对路径或仓库相对路径。以后升级 `mm-write-short-drama/` 时不会覆盖个人知识。
+审核先只读最终正文，记录此刻理解的人物目标、担忧、被迫改变策略的事件及首次卡点，再揭示大纲、来源和事实账本核对。首读不懂的地方不能在看完作者解释后倒填成原先已懂。超过上下文时按连续场次分块，记录实读覆盖与版本，再回读跨块因果；漏读一集或中断都保持“审核未完成”。
 
-### 方法二：从本地仓库安装
+若EP003的角色用了EP005才公开的信息，先记录两处原文、退回相关场次修订，重读提前知情的前因与后果，再用新hash审稿。手填 `--blocking-issues 0` 不能消除这条阻断。修后只重新检查受影响范围，最终交付仍通读实际输出版本。同一问题最多两轮自动返修，仍有分歧则保留待修稿请用户裁决。
+
+## 五书方法与来源
+
+随包方法摘要固定来自 [五书仓库6e99009的统一导入目录](https://github.com/CodeBlueFriend/short-drama-book-skills/tree/6e99009572a64f99d60134405fbf1cf200b0dfe4/knowledge-inbox)。它们不是原书全文，不能据此声称全文逐字校勘。用户不用先报书名；按当前决定选方法，个人已核卡优先，内置摘要兜底。
+
+| 书或材料 | 本次启用范围与来源边界 |
+|---|---|
+| 《救猫咪》 | 一句话梗概、整季节拍两项；公开原则与短剧适配分开标识。[梗概材料](https://github.com/CodeBlueFriend/short-drama-book-skills/blob/6e99009572a64f99d60134405fbf1cf200b0dfe4/knowledge-inbox/first-four-03-save-the-cat-logline.md)、[结构材料](https://github.com/CodeBlueFriend/short-drama-book-skills/blob/6e99009572a64f99d60134405fbf1cf200b0dfe4/knowledge-inbox/first-four-04-save-the-cat-beat-sheet.md)。 |
+| 《对白》 | 言语行动，用于场次和对白的要求、回应与换策略。[方法材料](https://github.com/CodeBlueFriend/short-drama-book-skills/blob/6e99009572a64f99d60134405fbf1cf200b0dfe4/knowledge-inbox/first-four-05-mckee-verbal-action.md)。 |
+| 《编剧路线图》 | 人物秘密/知情边界；书籍来源不足处标项目方法，不能把目录主题当全文核验。[交接材料](https://github.com/CodeBlueFriend/short-drama-book-skills/blob/6e99009572a64f99d60134405fbf1cf200b0dfe4/knowledge-inbox/first-four-02-showrunner-character-mystery.md)。 |
+| 《从零开始学短剧创作》 | 相邻集承诺和兑现；标明公开目录范围及交接包项目实务。[交接材料](https://github.com/CodeBlueFriend/short-drama-book-skills/blob/6e99009572a64f99d60134405fbf1cf200b0dfe4/knowledge-inbox/first-four-01-short-drama-payoff-turn.md)。 |
+| 麦基《故事》 | 19个稳定能力ID，覆盖激励事件、进展纠葛、危机选择、场次分析、伏笔兑现、信息、动作和改编等；旧01—06为上游修订2，07—19为修订1。中文来源记为周铁东译、天津人民出版社2014年版，章节/电子定位与原书hash随卡保留，纸本页码和全文逐字校勘仍待核。[译本与交接说明](https://github.com/CodeBlueFriend/short-drama-book-skills/blob/6e99009572a64f99d60134405fbf1cf200b0dfe4/story-handoff/README.md)。 |
+
+一个子任务通常选1张《故事》卡，明确跨域时最多2张；后续阶段可换卡。执行记录把“原问题→所选方法→上游决定→分集/场次/台词→复检结果”串起来，检索到不等于已使用。无秘密驱动的安静关系戏可以合理跳过秘密方法。完整能力索引见 [写作能力](mm-write-short-drama/references/writing-capabilities.md)。
+
+## 安装与升级
+
+`VERSION` 仍为1.1.0，本次是未发布的开发更新。历史说明见 [升级记录](CHANGELOG.md)、[v1.1](docs/versions/v1.1.md)、[v1.0](docs/versions/v1.0.md)。本地验证过的源码可这样安装：
 
 ```bash
 SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
@@ -71,81 +87,34 @@ mkdir -p "$SKILLS_DIR/mm-write-short-drama"
 cp -R ./mm-write-short-drama/. "$SKILLS_DIR/mm-write-short-drama/"
 ```
 
-### 运行依赖
+已有安装先保留可恢复副本及hash，再更新技能程序。个人项目、知识库和历史交付不覆盖。重新打开Codex或开启新任务，使技能列表刷新。公开分发只包含程序、通用模板、方法摘要、文档与测试；用户剧本、原模板全文及生产日志留在工作区。
 
-- Python 3.10 或更新版本；索引、状态和知识库工具使用标准库。
-- Word 导出需要 `python-docx`；在 Codex 中使用工作区依赖提供的 Python 与包。最终 Word 的 PNG 渲染验收还需要文档技能及其渲染环境。
-- 内容交付依赖另外安装的 `humanizer` 和 `mm-humanizer-gate` Skill。固定规则位于技能根下 `humanizer/SKILL.md`，门工具位于 `mm-humanizer-gate/scripts/humanizer_gate.py`，与本 Skill 同级；技能根为 `$CODEX_HOME/skills`，未设置时为 `~/.codex/skills`。规则固定版本和门工具调用见 [当前设计](docs/current-design.md#外部依赖与可移植路径)。
+运行需要Python 3.10+；Word导出另需 `python-docx`，在Codex中使用工作区提供的Python运行时。渲染需要文档工具环境。内置 `polish_guard.py` 记录局部编辑或原样通过的最终事实复核；外部Humanizer可作为项目唯一编辑来源，不能与内置流程无记录地重复全量改写。详见 [润色规则](mm-write-short-drama/references/humanizer-adapter.md)。
 
-本仓库不附带这两个 Humanizer 依赖或私人知识卡。若缺少外部依赖，应先显式安装，不能将完整内容交付流程视为自包含；纯版式模板维护和中性预览无需执行剧情 Humanizer。
-
-## 最快上手
-
-在 Codex 中显式调用：
+## 常见请求
 
 ```text
-$mm-write-short-drama 根据这个创意建立 6 集竖屏都市情感短剧项目：
-一个替人分手的职业谈判师，接到的客户竟是自己的未婚夫。
-采用严格确认模式，先完成项目启动单和故事圣经，不要直接写剧本。
+$mm-write-short-drama 根据我的创意建立6集都市情感短剧，先讲通完整故事，审后给大纲，等我确认再写。
 ```
 
-也可以自然触发：
-
 ```text
-把我提供的小说前五章改编成 6 集真人短剧。先建立原著索引和事实库，给我改编映射，确认后再做分集。
+$mm-write-short-drama 把我提供的novel.md前五章改为12集，标原著定位和改编决定，未提供后续写成候选方案。
 ```
 
-第一次合作推荐“严格确认模式”：在故事圣经、整季结构、首批分集和每批剧本后确认。流程成熟后可切换为辅助确认；自动推进遇到 P0/P1、规则冲突、重大改编或锁定事实变化仍会停下。
-
-## 常见用法
-
-### 1. 原创短剧
-
 ```text
-$mm-write-short-drama 原创一部 12 集女频悬疑短剧，单集 90 秒，竖屏、低成本真人拍摄。
-核心人物是一位替老人整理遗物的年轻遗物整理师，结局偏温暖但不能轻飘。
-先给项目启动单；缺失的关键问题一次最多问三个。
+$mm-write-short-drama 检索近30天家庭关系短剧，写清日期、平台、证据层级和热度待核项；提炼冲突方法，重新设计人物和结局。
 ```
 
-### 2. 小说改编
-
-把有权使用的 `.md` 或 `.txt` 原文放在工作区，然后说：
-
 ```text
-$mm-write-short-drama 把 ./source/novel.md 改编为 24 集短剧。
-先索引原文，区分原著事实、合理推断、改编决定和待确认项。
-本轮只交付原著事实库、改编映射和故事圣经。
+$mm-write-short-drama 继续已有项目，先恢复当前等待点；若大纲已确认，写EP006—EP010并更新账本、批审和Word。
 ```
 
-Skill 会记录用户声明的授权状态，但不会替代版权与法律判断。
-
-### 3. 分批写剧本
-
 ```text
-$mm-write-short-drama 读取 ./projects/逆光 项目状态，写 EP006—EP010。
-先生成该批最小上下文包，核对人物信息状态和未回收伏笔；写完后更新账本并出审核报告。
+$mm-write-short-drama 只审核这几场，不改稿。给出原文证据、影响、退回阶段和复检范围。
 ```
 
-### 4. 连续性审核
-
 ```text
-$mm-write-short-drama 审核 EP001—EP010 的人物伤势、秘密获知时间、手机和钥匙去向、日夜时间线及伏笔回收。
-每个问题给出集/场位置、账本证据、等级、影响范围和最小修法；先不要自动改写。
-```
-
-### 5. 去 AI 味
-
-```text
-$mm-write-short-drama 保持 EP003 的事实、人物动机和场景结果不变，诊断并改写对白的 AI 味。
-先列出人物同声同气、解释性对白、情绪直译和模板句式，再给局部修订及事实复核。
-```
-
-### 6. 加入编剧技巧
-
-```text
-$mm-write-short-drama 把这条技巧加入规则库，只适用于女频复仇的分集设计：
-主角第一次有效反击必须改变资源、关系或信息状态，不能只获得口头胜利。
-保留原文和来源，拆成原子规则，检查与现有规则冲突；有冲突先让我裁决。
+$mm-write-short-drama 保留本场事实和声纹，先标表达问题，只改必要几句；无需改动的原样通过。
 ```
 
 ## v1.1 个人编剧知识库
@@ -235,7 +204,7 @@ python3 mm-write-short-drama/scripts/search_knowledge.py \
 
 默认只返回 `active`。当前项目明确要求和锁定事实始终优先；`pending-conflict` 不会被调用。
 
-当前开发版支持在语义诊断后用 `--capability <原能力ID>` 精确补查；卡片保留 `source_note / source_url / source_verification` 等来源字段。五项能力入口、ID 和核验边界见 [当前设计](docs/current-design.md#五项写作能力与知识来源)。能力接口不表示仓库附带对应书籍全文或已审核私人卡。
+支持用 `--capability <原能力ID>` 精确补查；正常创作使用 `--format context`，让诊断、执行动作、输出、自检和例外进入落笔上下文。个人库同能力优先，无个人卡时使用随包已核方法摘要；来源不足、冲突及草稿卡不自动启用。范围见 [五书方法与来源](docs/current-design.md#五书方法与来源)。
 
 ### 校验知识库
 
@@ -256,205 +225,144 @@ python3 mm-write-short-drama/scripts/ingest_knowledge.py \
 
 也可选择 `activate-new`；若选择 `keep-both`，必须用 `--note` 写清两条规则已经分离的适用范围。
 
-## 小说上传改编示例
-
-把有权使用的小说 `.md`/`.txt` 上传到 Codex 或放进工作区，然后使用：
-
-```text
-$mm-write-short-drama 把我上传的 novel.md 改编成24集竖屏真人短剧，单集90秒。
-个人知识库使用 ./knowledge-base。
-先索引全文，区分原著事实、合理推断、改编决定和待确认项；
-只检索 adaptation、都市情感、live-action 相关的 active 知识卡。
-本轮只交付原著事实库、改编映射和故事圣经，不写分集和剧本。
-审核摘要列出实际使用的知识规则 ID。
-```
-
-小说正文属于短剧项目素材，不要放入 `knowledge-base/`；知识库只保存可复用的编剧方法和指导。
-
-## 根据思路原创短剧示例
-
-```text
-$mm-write-short-drama 根据这个思路原创6集竖屏都市悬疑短剧：
-一位便利店夜班店员替陌生人保管秘密，最后发现秘密都指向同一场旧案。
-低成本真人拍摄，单集90秒，结局温暖但不能靠巧合。
-使用 ./knowledge-base，只检索 planning 阶段、都市悬疑、live-action 相关的 active 规则。
-严格确认模式，先完成项目启动单、原创故事发现和故事圣经；不要直接写分集。
-说明实际使用了哪些知识规则 ID。
-```
-
-进入整季结构、分集、场景和对白阶段时分别重新检索对应阶段，避免把全库塞进上下文。
-
-## 项目文件如何工作
-
-聊天不是最终事实源。每个项目都把已确认内容保存为文件：
+## 项目文件
 
 ```text
 project-name/
 ├── .drama/
 │   ├── project-state.json
 │   ├── artifact-index.json
-│   └── invalidation-log.jsonl
+│   ├── workflow.json
+│   ├── invalidation-log.jsonl
+│   ├── polish/
+│   └── staging/
+├── source-evidence.json       # 素材来源、可见证据和缺口
+├── 03-story-treatment.md      # 从开端到结局的连续故事底稿
 ├── 00-project-brief.md
-├── 01-source-index.md          # 改编项目
-├── 02-source-truth.md          # 改编项目
-├── 03-adaptation-map.md        # 改编项目
-├── 03-original-discovery.md    # 原创项目；与改编映射二选一
+├── 01-source-index.md         # 改编/旧素材路径
+├── 02-source-truth.md
+├── 03-adaptation-map.md
+├── 03-original-discovery.md
 ├── 04-story-bible.md
-├── 05-season-architecture.md
+├── 05-season-architecture.md  # 供确认的完整大纲
 ├── 06-episode-matrix.csv
-├── continuity/
-│   ├── canon.yaml
-│   ├── timeline.csv
-│   ├── character-state.csv
-│   ├── knowledge-state.csv
-│   ├── relationships.csv
-│   ├── props-ledger.csv
-│   ├── evidence.csv
-│   ├── hooks-ledger.csv
-│   └── foreshadowing.csv
+├── continuity/               # 人物、知情、时间、关系、钱物及伏笔
 ├── episodes/
-├── deliverables/             # 本批全部集数合并为一个 Word
-├── reviews/
+├── front-matter.md            # 当前项目九模块
+├── reviews/                  # 两遍实读记录、问题、覆盖及版本
+├── deliverables/             # 每批一份验收后的正式Word
 ├── context-packs/
 ├── locked-decisions.md
 └── change-log.md
 ```
 
-事实分为五层：L0 用户锁定；L1 已审核；L2 当前计划；L3 临时候选；L4 已废弃。只有 L0/L1 能被后续当作既定事实。修改锁定事件前，Skill 应先报告受影响集数、人物动机、时间线、伏笔、道具和信息状态。
+事实仍分L0用户锁定、L1已审核、L2计划、L3假设、L4废弃，只有L0/L1作为既定事实。旧项目没有新版工作流记录时可只读诊断；不能自动把旧approved当新版已确认。整季续作先提出迁移映射和未决项。
 
-## 命令行工具
+## 命令行工作流
 
-这些脚本负责可重复的初始化、索引、状态迁移、依赖分析、装配、校验、统计和 Word 导出；创作质量仍由工作流审核。
+脚本负责证据、覆盖、版本、状态和文件检查，语义与创作判断由实际读稿的编剧/审核者完成。命令帮助以当前源码 `--help` 为准。
 
 ```bash
 SKILL_DIR=./mm-write-short-drama
+PROJECT=./projects/example
+python3 "$SKILL_DIR/scripts/init_project.py" "$PROJECT" --mode original --total-episodes 6
 ```
 
-### 初始化项目
+三来源分别为 `--mode adaptation`、`--mode original`、`--mode market-research`。旧 `--mode source-remix` 保留原素材再创作含义，不能自动改标为近期检索。`--through brief|story-bible|full` 仅决定创建骨架的范围，文件存在不等于内容完成。
+
+写好来源证据和故事底稿后：
 
 ```bash
-python3 "$SKILL_DIR/scripts/init_project.py" ./projects/my-drama --mode original
-python3 "$SKILL_DIR/scripts/init_project.py" ./projects/my-adaptation --mode adaptation
-python3 "$SKILL_DIR/scripts/init_project.py" ./projects/my-gate-a --mode original --through story-bible
-python3 "$SKILL_DIR/scripts/init_project.py" ./projects/my-remix --mode source-remix \
-  --production-mode live_action --orientation vertical --total-episodes 6
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" status
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" review-pack --stage treatment
 ```
 
-`--through brief` 只创建启动阶段文件；`--through story-bible` 创建到审核门 A；默认 `full` 创建完整骨架。为保护已有项目，目标目录非空时脚本会拒绝覆盖。
-
-### 状态恢复与上游影响分析
+命令返回本次 `READ-...` session ID及按顺序的正文分块。先实际读分块，保存首读笔记，再打开来源和大纲。以下使用返回的真实ID替换 `READ-...`：
 
 ```bash
-python3 "$SKILL_DIR/scripts/validate_state.py" ./projects/my-drama --json
-python3 "$SKILL_DIR/scripts/impact_analysis.py" ./projects/my-drama \
-  --changed 04-story-bible.md --json
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" report-template --session READ-... --output review-template.json
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" first-read --session READ-... --report first-read.json
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" reveal-context --session READ-...
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" record-review --session READ-... --report reviewed.json
 ```
 
-影响分析默认只读。用户批准具体变更后才加 `--apply --approved-by ... --reason ...` 标记依赖失效；脚本不会自动重写正文。逐集通过 `update_episode_state.py` 记录 `planned → draft → in_review → revision/in_review → approved`，批准前要求阻断问题清零并记录上游 revision。完整命令和校验边界见 [当前设计](docs/current-design.md#单集状态与版本依赖)。
+模板包含 `firstRead` 与 `secondPass` 两个对象，需分别取出，在实际阅读后填写为上面的两个文件。空模板、`read:true` 或计分不能代替实读。每个检查域和问题都需可回指的原文证据；返回阻断问题时按根因返修，用新正文创建新会话复检。
 
-### 合并导出 Word
+底稿通过后补大纲和圣经，运行 `review-pack --stage outline`，重复两遍审读。用户真实确认该版之后才执行：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" confirm-outline \
+  --decision confirm --quote '用户实际确认原话' --message-ref '真实对话定位' --scope '全剧大纲及本次交付范围'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" check-writing
+```
+
+不能把示例中的引号内容当作用户授权。用户要求修改时用 `--decision revise` 记录实际意见，再改稿、重审、重新确认。`status` 在重启时发现内容变化会持久化失效状态。
+
+正文阶段先用 `build_context_pack.py "$PROJECT" --episodes 1-5` 装配上下文，再用 `review-pack --stage batch --episodes 1-5` 批审。逐集状态仍由 `update_episode_state.py` 维护，但批准须有当前有效批审证据和实际文件，调用者不能自行声明问题数替代审核。上游影响分析仍用 `impact_analysis.py`；已有修改授权可按其范围执行，不能擅改锁定内容。
+
+### 润色与正式 Word
+
+先保存前后稿，按需局部编辑或原样通过，用 `polish_guard.py inspect|record|check` 留下当前hash的最终语义复核记录。程序是保守差异检查，金额、责任人、日期、否定、条件与承诺仍需逐处读。外部Humanizer的旧token检查单独通过不构成语义通过。
+
+正式Word在首集之前按顺序包含：剧本名、来源、类型/短剧类型、集数（全剧与本稿范围）、剧名寓意、热门元素、创作理由、故事梗概、主要角色。由已确认材料生成当前项目内容，不能套用样剧人物、空标题或虚构署名。分批稿写清本批收束与未来回收归属。
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" review-pack \
+  --stage final --episodes 1-5 --front-matter "$PROJECT/front-matter.md"
+```
+
+完成最终两遍通读、当前问题清零和事实复核后检查并暂存：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" check-release \
+  --episodes 1-5 --front-matter "$PROJECT/front-matter.md"
+python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" \
+  "$PROJECT/episodes/EP001.md" "$PROJECT/episodes/EP002.md" "$PROJECT/episodes/EP003.md" \
+  "$PROJECT/episodes/EP004.md" "$PROJECT/episodes/EP005.md" \
+  --project-dir "$PROJECT" --project-title 项目名 --front-matter "$PROJECT/front-matter.md" \
+  --output "$PROJECT/deliverables/项目名_第01-05集.docx"
+```
+
+导出输入目录必须只含该批要交付的集；也可显式列出本批文件。命令先输出 `.drama/staging/` 中待验收的Word和清单，尚未写正式交付文件。用同一bundled Python执行实际渲染包装器，指定真实的文档渲染脚本；输出目录必须是新的，不能给旧图片补认证：
+
+```bash
+python3 "$SKILL_DIR/scripts/render_screenplay.py" /absolute/project/.drama/staging/returned-file.docx \
+  --renderer /实际bundled路径/documents/render_docx.py \
+  --output-dir /absolute/project/work/word-render-新版本
+```
+
+包装器实际调用渲染器，输出PDF、全部页图和 `render-manifest.json`。逐页打开图片检查，在视觉QA中记录准确docx hash、审核者、全部页图hash及观察；`QA.renderManifest` 必须指向本次包装器实际生成的 `render-manifest.json`，`renderDirectory` 指向其目录。发布时重新读取PDF真实页数、核对每页尺寸与摘要，并检查manifest绑定的Word和渲染器；1×1占位图、缺页或另一份Word的旧渲染不能用QA自报hash放行。然后执行：
 
 ```bash
 python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" \
-  ./projects/my-drama/episodes/EP001.md ./projects/my-drama/episodes/EP002.md \
-  --output ./projects/my-drama/deliverables/项目名_第01-02集.docx \
-  --project-title 项目名
+  --publish /absolute/project/.drama/staging/returned-file.docx --visual-qa /absolute/project/visual-qa.json
 ```
 
-默认采用 `assets/screenplay-base-template.docx`：宋体、13 磅总标题、10.5 磅正文、1.4 倍行距、标题行黄色高亮、蓝色台词及真实页码字段。导出先清除中性占位，仅写入当前项目内容，并隐藏控制信息和连续性维护区。可选 `--front-matter ./projects/my-drama/front-matter.md` 只输出用户明确提供且已审核的当前项目前置内容；未提供就不输出。一个批次一个 Word，各集不强制另起一页。详见 [Word 交付规则](mm-write-short-drama/references/word-delivery.md)。
+正式文件不能覆盖；重试使用新版本路径。正文、大纲、前置内容或待交付Word变化后，相关审核/确认/实物验收失效。版式预览必须显式 `--preview`，页面标识预览，不计正式状态。详见 [Word规则](mm-write-short-drama/references/word-delivery.md)。
 
-真实剧本须先完成内容审核、外部 Humanizer 编辑与记录，再导出并渲染逐页检查。导出脚本本身不会证明这些门已通过。
+默认版式保留宋体、13磅总标题、10.5磅正文、1.4倍行距、黄色标题行、蓝色台词和真实PAGE/NUMPAGES。各集连续流排，一批全部集数一个Word；不在Word里重新改对白。
 
-### 给原著建立稳定索引
+### 其他工具
+
+- `index_source.py`：索引原著，记录文件hash与章节/行号；
+- `validate_project.py`、`validate_state.py`：检查文件、字段、依赖和状态；
+- `screenplay_stats.py`：检查场数、对白与粗估时长，不能替代朗读；
+- `import_book_capabilities.py`：隔离导入、核查后启用、显式迁移旧六卡；
+- `search_knowledge.py --format context`：查询落笔需要的完整执行字段；
+- `validate_knowledge.py`：核来源hash、能力版本与索引。
+
+## 回归与边界
 
 ```bash
-python3 "$SKILL_DIR/scripts/index_source.py" ./source/novel.md \
-  -o ./projects/my-adaptation/01-source-index.md
-```
-
-支持一个或多个 `.md` / `.txt` 文件或目录。章节索引包含稳定 Source ID、行号、字符数和内容摘要哈希，便于改编事实引用证据位置。
-
-### 构建一批剧本的最小上下文包
-
-```bash
-python3 "$SKILL_DIR/scripts/build_context_pack.py" ./projects/my-drama \
-  --episodes 6-10
-```
-
-默认输出到 `context-packs/EP006-EP010-context.md`。上下文包是源文件快照，不会成为新的事实源；正式写作前仍需核对关键账本。
-
-### 校验项目结构
-
-```bash
-python3 "$SKILL_DIR/scripts/validate_project.py" ./projects/my-drama --mode original
-python3 "$SKILL_DIR/scripts/validate_project.py" ./projects/my-adaptation --mode adaptation --json
-python3 "$SKILL_DIR/scripts/validate_project.py" ./projects/my-gate-a --mode original --stage gate-a
-```
-
-脚本检查必需文件、CSV 字段、剧本标题/控制信息/连续性更新、标准场景头和分集矩阵映射。错误返回非零退出码，警告不会阻断。
-
-### 统计剧本
-
-```bash
-python3 "$SKILL_DIR/scripts/screenplay_stats.py" ./projects/my-drama/episodes
-python3 "$SKILL_DIR/scripts/screenplay_stats.py" ./projects/my-drama/episodes --json
-```
-
-统计场次、对白行/字数、动作字数、说话角色和粗略时长。时长只是异常检测信号，不替代朗读、表演节奏和剪辑判断。
-
-所有脚本的完整参数均可用 `--help` 查看。
-
-### 个人知识库脚本
-
-- `ingest_knowledge.py`：保留原文、提炼候选原子规则、分类、查重、冲突冻结、用户裁决和重建索引；
-- `search_knowledge.py`：按任务、阶段、题材、制作模式和状态检索；
-- `validate_knowledge.py`：检查卡片字段、来源哈希、冲突状态和索引；
-- `knowledge_lib.py`：三套命令共享的标准库实现。
-
-## 审核标准
-
-审核固定从上游到下游：结构因果 → 原著忠实（改编）→ 人物动机/信息 → 连续性 → 节奏 → 去 AI 味 → 制作 → 格式。每个问题必须带位置、证据、等级、影响和修法。
-
-当前开发版使用 P0–P3 和结构化问题单。交付要求 P0 清零，P1 修复或有明确接受记录；锁定事实冲突、角色提前获知、关键道具和时间线断裂必须为 0。重大改编全部记录，每场有戏剧功能；评分不能抵消阻断问题。审核默认只报告，收到修复指令后才改稿。
-
-## 仓库结构
-
-```text
-mm-write-short-drama/       # 可直接安装的 Skill
-├── SKILL.md                # 路由、主流程、审核门和资源读取规则
-├── agents/openai.yaml      # Codex UI 元数据
-├── references/             # 按阶段加载的创作与审核规则
-├── assets/                 # 项目、故事圣经、分集、场次、剧本、审核模板
-├── schemas/                # 状态、依赖、失效事件和问题单结构
-├── evals/                  # 状态与依赖回归用例
-└── scripts/                # 确定性辅助工具与 Word 导出
-knowledge-base/             # 知识库骨架和示例；私人资料不随源码分发
-docs/                       # 设计映射和测试提示集
-```
-
-## 故障排查
-
-- **Codex 没显示 Skill**：确认目录是 `~/.codex/skills/mm-write-short-drama/SKILL.md`，不是多嵌套了一层仓库名；重新启动 Codex 或新建任务。
-- **Skill 直接开始写全剧**：显式要求“严格确认模式，先过故事圣经审核门 A”，并确认项目文件可写。
-- **续写时忘记旧事实**：要求先运行上下文包脚本，并明确读取相关连续性账本和最新 `change-log.md`。
-- **校验提示缺文件**：新项目用 `init_project.py` 创建所需阶段骨架。旧项目新增 `.drama/` 和账本字段前先拟迁移草案，不覆盖已有内容或推断已批准状态；当前没有一键迁移工具，详见 [迁移边界](docs/current-design.md#旧项目与升级边界)。
-- **中文文件乱码**：脚本按 UTF-8/UTF-8 with BOM 读取；先把源文件转换为 UTF-8。
-- **时长估计不准**：用 `--chars-per-second` 调整对白语速，最终以真人朗读为准。
-- **知识卡没有被检索**：确认状态为 `active`，阶段/题材/制作范围匹配，并在项目启动单写对知识库路径。
-- **出现冲突规则**：查看 `knowledge-base/conflicts/open.jsonl`，未裁决前不要把卡片手工改为 active。
-
-## 开发与验证
-
-```bash
-python3 /path/to/skill-creator/scripts/quick_validate.py ./mm-write-short-drama
-python3 -m py_compile ./mm-write-short-drama/scripts/*.py
 python3 -m unittest discover -s tests -v
-python3 ./mm-write-short-drama/evals/test_p0.py
-python3 ./tests/validate_seeded_knowledge.py
+python3 mm-write-short-drama/evals/test_p0.py
+python3 tests/validate_seeded_knowledge.py
 ```
 
-建议用 [测试提示集](docs/test-prompts.md) 做触发、原创、改编、连续性陷阱、去 AI 味和技巧冲突回归测试。
+行为及创作效果用例见 [测试提示集](docs/test-prompts.md)。技术通过、可检索、独立首读和固定条件匿名比较应分别报告。当前代码的版本校验能发现记录失效，不能保证某位读者一定发现故事弱点。首读未完成、缺批次、大纲未确认、阻断问题未关闭都应保持待修，不生成正式交付。
 
-## 设计来源与许可
+本地旧剧本、原参考模板和生产日志是私人回归资料，不随公开源码分发。旧流程调查与合成复现不能被写成历史生产真相；本轮未完成的盲测及创作A/B在交接验收记录中逐项列出。
 
-v1.0 实现依据用户提供的《短剧编剧 Skill 完整项目设计 v1.0》；v1.1 增加与 Skill 分离的个人编剧知识库，当前开发更新继续采用渐进加载和源码与用户资料分离原则。代码与文档采用 MIT License；外部 Humanizer 及用于改编的第三方素材仍适用各自许可与权利边界。
+## 设计与许可
+
+完整结构、兼容和证据契约见 [当前设计](docs/current-design.md)。v1.0/v1.1历史资料保持原貌。代码与文档采用MIT；第三方方法摘要、Humanizer规则和改编素材仍适用各自来源与许可边界。

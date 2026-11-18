@@ -9,6 +9,8 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
+from workflow_lib import digest, current_review, semantic_errors, validate_episode_review, writing_errors
+
 
 TRANSITIONS = {
     "not_started": {"planned"},
@@ -33,6 +35,7 @@ def episode_number(value: str) -> str:
 
 
 def save(path: Path, value: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".json.tmp")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
@@ -55,6 +58,13 @@ def main() -> int:
     if not path.exists():
         parser.error("missing .drama/project-state.json")
     state = json.loads(path.read_text(encoding="utf-8"))
+    root = path.parent.parent
+    if not state.get("totalEpisodes") or int(args.episode) > state["totalEpisodes"]:
+        parser.error("episode must be within the project's declared totalEpisodes")
+    if args.to in {"planned", "draft", "in_review", "approved"}:
+        errors = writing_errors(root)
+        if errors:
+            parser.error("; ".join(errors))
     episodes = state.setdefault("episodes", {})
     episode = episodes.setdefault(args.episode, {
         "status": "not_started", "planRevision": 0, "scriptRevision": 0,
@@ -74,8 +84,11 @@ def main() -> int:
     if args.blocking_issues is not None:
         episode["openBlockingIssues"] = args.blocking_issues
     if args.to == "approved":
-        if episode["openBlockingIssues"] != 0:
-            parser.error("cannot approve an episode with blocking issues")
+        errors = validate_episode_review(root, args.episode) + semantic_errors(root, args.episode)
+        if errors:
+            parser.error("; ".join(errors))
+        # Caller counters are advisory only. The current evidence-backed report controls approval.
+        episode["openBlockingIssues"] = 0
         if not episode["basedOnStoryBibleRevision"] or not episode["basedOnMatrixRevision"]:
             parser.error("approval requires story-bible and matrix revisions")
 
@@ -94,6 +107,11 @@ def main() -> int:
         parser.error("missing .drama/artifact-index.json")
     index = json.loads(index_path.read_text(encoding="utf-8"))
     artifacts = index.setdefault("artifacts", {})
+    if args.to == "approved":
+        for key, field in (("storyBible", "basedOnStoryBibleRevision"), ("episodeMatrix", "basedOnMatrixRevision")):
+            upstream = artifacts.get(key, {})
+            if upstream.get("status") == "stale" or upstream.get("revision") != episode[field]:
+                parser.error(f"approval uses an obsolete {key} revision")
     known_paths = {item.get("path") for item in artifacts.values()}
 
     def upsert(key: str, artifact_path: str, dependencies: list[str], status: str) -> None:
@@ -107,7 +125,7 @@ def main() -> int:
             "status": status,
             "dependsOn": dependencies,
             "validators": ["validate_project.py"],
-            "contentHash": None,
+            "contentHash": digest(root / artifact_path) if (root / artifact_path).is_file() else None,
         }
         artifacts[key] = entry
         known_paths.add(artifact_path)
@@ -131,10 +149,22 @@ def main() -> int:
                 artifacts[key]["status"] = "stale" if key.endswith("Review") else "draft"
                 state["artifacts"][key]["status"] = artifacts[key]["status"]
     elif args.to == "approved":
+        review, _ = current_review(root, "batch", [args.episode])
+        key = prefix + "Review"
+        if key in artifacts:
+            receipt_path = root / f".drama/episode-reviews/EP{args.episode}.json"
+            save(receipt_path, {"schemaVersion": "1.0.0", "episode": args.episode,
+                                "batchSession": review["sessionId"], "report": review["report"],
+                                "scriptHash": digest(root / script_path)})
+            artifacts[key]["path"] = str(receipt_path.relative_to(root))
+            artifacts[key]["contentHash"] = digest(receipt_path)
+            state["artifacts"][key]["path"] = artifacts[key]["path"]
         for key in (prefix + "Script", prefix + "Review"):
             if key not in artifacts:
                 parser.error(f"cannot approve; missing indexed artifact {key}")
             artifacts[key]["status"] = "approved"
+            if key.endswith("Script"):
+                artifacts[key]["contentHash"] = digest(root / script_path)
             state["artifacts"][key]["status"] = "approved"
 
     index["projectRevision"] = state["projectRevision"]

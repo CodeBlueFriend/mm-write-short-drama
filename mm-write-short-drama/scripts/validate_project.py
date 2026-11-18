@@ -60,8 +60,10 @@ def read_csv_header(path: Path) -> set[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("project_dir", type=Path)
-    parser.add_argument("--mode", choices=("original", "adaptation", "source_remix"), help="Defaults to project-state sourceMode")
-    parser.add_argument("--stage", choices=("brief", "gate-a", "full"), default="full")
+    parser.add_argument("--mode", choices=("original", "adaptation", "source_remix", "market_research"), help="Defaults to project-state sourceMode")
+    parser.add_argument("--stage", choices=("brief", "gate-a", "full", "writing", "release"), default="full")
+    parser.add_argument("--episodes", help="Required for --stage release, e.g. 1-5")
+    parser.add_argument("--front-matter", type=Path)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args()
     root = args.project_dir.expanduser().resolve()
@@ -94,7 +96,7 @@ def main() -> int:
         elif path.is_file() and path.stat().st_size == 0:
             warnings.append(f"empty file: {relative}")
 
-    for relative, expected in (CSV_REQUIRED.items() if args.stage == "full" else []):
+    for relative, expected in (CSV_REQUIRED.items() if args.stage in {"full", "writing", "release"} else []):
         path = root / relative
         if not path.exists():
             continue
@@ -104,7 +106,7 @@ def main() -> int:
             errors.append(f"{relative}: missing columns {', '.join(sorted(missing))}")
 
     episode_dir = root / "episodes"
-    episode_files = sorted(episode_dir.glob("EP*.md")) if episode_dir.exists() else []
+    episode_files = sorted(p for p in episode_dir.glob("EP*.md") if re.fullmatch(r"EP\d+\.md", p.name, re.I)) if episode_dir.exists() else []
     for path in episode_files:
         content = path.read_text(encoding="utf-8-sig")
         for header in EPISODE_HEADERS:
@@ -120,7 +122,11 @@ def main() -> int:
     matrix = root / "06-episode-matrix.csv"
     if matrix.exists():
         with matrix.open(encoding="utf-8-sig", newline="") as handle:
-            matrix_ids = {row.get("episode", "").upper() for row in csv.DictReader(handle) if row.get("episode")}
+            matrix_ids = set()
+            for row in csv.DictReader(handle):
+                match = re.search(r"\d+", row.get("episode", ""))
+                if match:
+                    matrix_ids.add(f"EP{int(match.group()):03d}")
         file_ids = {path.stem.upper() for path in episode_files}
         for file_id in sorted(file_ids - matrix_ids):
             warnings.append(f"episode file {file_id} has no matrix row")
@@ -138,10 +144,26 @@ def main() -> int:
             errors.append(f"{path.relative_to(root)}: invalid review issue JSON: {exc}")
             continue
         missing = issue_required - set(issue) if isinstance(issue, dict) else issue_required
+        # Composite reader reports are validated by workflow.py against their session;
+        # arbitrary JSON files are not independent issue objects.
+        if isinstance(issue, dict) and ("sessionId" in issue or "readChunks" in issue):
+            continue
         if missing:
             errors.append(f"{path.relative_to(root)}: missing review issue fields {', '.join(sorted(missing))}")
         elif issue.get("schemaVersion") != "1.0.0" or issue.get("severity") not in {"P0", "P1", "P2", "P3"}:
             errors.append(f"{path.relative_to(root)}: invalid review issue version or severity")
+
+    if args.stage in {"writing", "release"}:
+        from workflow_lib import writing_errors, validate_release, episode_range
+        if args.stage == "writing":
+            errors += writing_errors(root)
+        elif not args.episodes or not args.front_matter:
+            errors.append("release validation requires --episodes and --front-matter")
+        else:
+            try:
+                errors += validate_release(root, episode_range(args.episodes), args.front_matter)
+            except ValueError as exc:
+                errors.append(str(exc))
 
     result = {"project": str(root), "mode": mode, "stage": args.stage, "errors": errors, "warnings": warnings, "episode_files": len(episode_files), "valid": not errors}
     if args.as_json:

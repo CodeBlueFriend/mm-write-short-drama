@@ -9,9 +9,20 @@ source_modes:
     required_references: [workflow.md, adaptation.md]
     required_artifacts: [00-project-brief.md, 01-source-index.md, 02-source-truth.md, 03-adaptation-map.md, 04-story-bible.md]
   source_remix:
-    label: 素材再创作
+    label: 素材再创作（旧项目原来源标记，不等同近期市场检索）
     required_references: [workflow.md, adaptation.md]
     required_artifacts: [00-project-brief.md, 01-source-index.md, 02-source-truth.md, 03-adaptation-map.md, 04-story-bible.md]
+  market_research:
+    label: 检索近期爆款后创作
+    required_references: [workflow.md, source-intake.md, original-creation.md]
+    required_artifacts: [00-project-brief.md, source-evidence.json, 02-market-research.md, 03-story-treatment.md, 04-story-bible.md]
+common_gates:
+  - treatment_two_pass_review
+  - outline_two_pass_review
+  - explicit_user_confirmation_of_current_outline
+  - batch_review
+  - final_text_two_pass_review
+  - word_staging_and_visual_qa
 production_modes:
   live_action:
     label: 真人

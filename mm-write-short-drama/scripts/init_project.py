@@ -36,12 +36,13 @@ def write_json(path: Path, value: dict) -> None:
 def artifact_specs(source_mode: str, through: str) -> dict[str, dict]:
     specs: dict[str, dict] = {
         "projectBrief": {"path": "00-project-brief.md", "dependsOn": []},
+        "sourceEvidence": {"path": "source-evidence.json", "dependsOn": ["00-project-brief.md"]},
         "canon": {"path": "continuity/canon.yaml", "dependsOn": ["00-project-brief.md"]},
         "lockedDecisions": {"path": "locked-decisions.md", "dependsOn": []},
         "changeLog": {"path": "change-log.md", "dependsOn": []},
     }
     if through in {"story-bible", "full"}:
-        if source_mode == "original":
+        if source_mode in {"original", "market_research"}:
             specs["originalDiscovery"] = {"path": "03-original-discovery.md", "dependsOn": ["00-project-brief.md"]}
             story_deps = ["00-project-brief.md", "03-original-discovery.md"]
         else:
@@ -49,7 +50,11 @@ def artifact_specs(source_mode: str, through: str) -> dict[str, dict]:
             specs["sourceTruth"] = {"path": "02-source-truth.md", "dependsOn": ["01-source-index.md"]}
             specs["adaptationMap"] = {"path": "03-adaptation-map.md", "dependsOn": ["02-source-truth.md"]}
             story_deps = ["00-project-brief.md", "03-adaptation-map.md"]
-        specs["storyBible"] = {"path": "04-story-bible.md", "dependsOn": story_deps}
+        if source_mode == "market_research":
+            specs["marketResearch"] = {"path": "02-market-research.md", "dependsOn": ["source-evidence.json"]}
+            story_deps.append("02-market-research.md")
+        specs["storyTreatment"] = {"path": "03-story-treatment.md", "dependsOn": story_deps + ["source-evidence.json"]}
+        specs["storyBible"] = {"path": "04-story-bible.md", "dependsOn": ["03-story-treatment.md"]}
     if through == "full":
         specs["seasonArchitecture"] = {"path": "05-season-architecture.md", "dependsOn": ["04-story-bible.md"]}
         specs["episodeMatrix"] = {"path": "06-episode-matrix.csv", "dependsOn": ["04-story-bible.md", "05-season-architecture.md"]}
@@ -62,7 +67,7 @@ def artifact_specs(source_mode: str, through: str) -> dict[str, dict]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("project_dir", type=Path, help="New or empty project directory")
-    parser.add_argument("--mode", choices=("original", "adaptation", "source-remix"), default="original", help="Source route; name preserved for CLI compatibility")
+    parser.add_argument("--mode", choices=("original", "adaptation", "market-research", "source-remix"), default="original", help="Three new-project routes; source-remix retains the legacy material route")
     parser.add_argument("--production-mode", choices=("live_action", "ai_drama", "hybrid", "unspecified"), default="unspecified")
     parser.add_argument("--orientation", choices=("vertical", "horizontal", "custom"), default="vertical")
     parser.add_argument("--delivery-scope", choices=("diagnosis", "outline", "episodes", "screenplay", "review", "revision", "knowledge", "unspecified"), default="unspecified")
@@ -90,7 +95,7 @@ def main() -> int:
     copies = {"project-brief-template.md": "00-project-brief.md"}
     if args.through in {"story-bible", "full"}:
         copies["story-bible-template.md"] = "04-story-bible.md"
-        if source_mode == "original":
+        if source_mode in {"original", "market_research"}:
             copies["original-discovery-template.md"] = "03-original-discovery.md"
         else:
             copies["source-truth-template.md"] = "02-source-truth.md"
@@ -100,6 +105,17 @@ def main() -> int:
         copies["episode-matrix-template.csv"] = "06-episode-matrix.csv"
     for source_name, target_name in copies.items():
         shutil.copyfile(assets / source_name, root / target_name)
+
+    write_json(root / "source-evidence.json", {
+        "schemaVersion": "1.0.0", "sourceMode": source_mode,
+        "originalIdea": "", "creatorLocks": [], "authorizationStatus": "unknown",
+        "queryDate": "", "windowDays": 30, "platform": "", "region": "", "genre": "",
+        "records": [], "sourceGaps": [], "originalityDecisions": [],
+    })
+    if args.through in {"story-bible", "full"}:
+        write_new(root / "03-story-treatment.md", "# 完整故事底稿\n\n<!-- 用连续自然语言写到结局，先审读因果和动机，再展开大纲。 -->\n")
+        if source_mode == "market_research":
+            write_new(root / "02-market-research.md", "# 近期参考与原创取舍\n\n<!-- 记录实际查询日期、来源类型、热度口径、缺口及新人物目标/因果/结局。 -->\n")
 
     if source_mode in {"adaptation", "source_remix"} and args.through in {"story-bible", "full"}:
         write_new(root / "01-source-index.md", "# 原著索引\n\n")
@@ -142,11 +158,15 @@ def main() -> int:
     })
     write_json(root / ".drama" / "artifact-index.json", {"schemaVersion": "1.0.0", "projectRevision": 1, "artifacts": indexed})
     write_new(root / ".drama" / "invalidation-log.jsonl", "")
+    write_json(root / ".drama/workflow.json", {
+        "schemaVersion": "1.0.0", "phase": "source", "reviews": [],
+        "outlineConfirmation": None, "confirmationHistory": [], "events": [],
+    })
     write_json(root / ".humanizer" / "policy.json", {
-        "schemaVersion": "1.0.0", "required": True,
+        "schemaVersion": "1.0.0", "required": False, "mode": "local",
         "humanizerCommit": "9862685f575c65a8247f90369951df1b3416e3d6",
         "adapter": "short-drama", "adapterVersion": "1.0.0",
-        "statusRule": "Only a verified model edit may be completed",
+        "statusRule": "Local edits only where needed; unchanged text may pass after final semantic review. One rewriter per project.",
     })
     (root / ".humanizer" / "originals").mkdir(parents=True, exist_ok=True)
 

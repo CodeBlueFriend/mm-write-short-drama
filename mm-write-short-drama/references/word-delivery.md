@@ -1,72 +1,69 @@
-# 合并 Word 剧本交付
+# 正式 Word 导出与实物验收
 
-## 默认交付单位
+每批一份 Word，包含本批全部集数，按集号连续流排；只有明确要求整季合订才合并整季。文件名为“项目名_第起始集-结束集.docx”，单集为“项目名_第NN集.docx”。格式来自 `assets/screenplay-base-template.docx`；样剧只提供版式，不提供本项目的任何剧情、人物或署名。现有宋体、黄色集场人物行、蓝色台词和动态 `PAGE / NUMPAGES` 保持；场次头规范为“1-1 日 内 地点”。
 
-- 逐集 Markdown 保留在 `episodes/`，作为含控制信息和连续性更新的项目事实源。
-- 每次交付只生成一个演员/制片纯剧本 `.docx`。本批有多少集，就把多少集按集号升序放入同一个文件；不得默认生成多个单集 Word。
-- 各集在同一文档中连续流排，不强制另起一页。批次文件写入 `deliverables/`，命名为 `项目名_第NN-NN集.docx`；单集为 `项目名_第NN集.docx`。
-- 新一批只合并该批集数。只有用户明确要求“整季合订”时，才把全部已确认集数合并为一个 Word。
+## 正式件的九个前置模块
 
-## Word 中保留与隐藏的内容
+首页剧名之下、首集之前按顺序列出：剧本名、来源、类型或短剧类型、集数、剧名寓意、热门元素、创作理由、故事梗概、主要角色。已按本地原模板核实：来源与类型是两个独立段落，字段原名为“类型”；前六项沿用同行标签与内容，后三项为独立标题和正文。“短剧类型”保留为旧输入别名。使用 [前置模块模板](../assets/front-matter-template.md) 的栏目，由已确认材料生成当前项目内容并审读，禁止空标题、占位、虚构署名和串入样剧。原参考有额外正文前模块时一并保留并审查。
 
-Word 纯剧本只保留：集标题、场次标题、人物行、动作、转场标记、对白、OS 和 VO。隐藏以下项目维护区：
+“集数”同时写总数和本稿范围，例如“全剧共50集，本稿为第1—30集正式剧本”。脚本核对总数、范围、顺序、重复和断号；梗概落到本批实际收束点，全剧规划另标。角色每人一段，写身份、关系、目标、局限、典型选择及变化。热度主张需日期与来源；无热度证据可只写本稿实际看点。事实准确、内容完整和人物简介质量由最终阅读负责，不能为空校验代替。
 
-- `本集控制信息`
-- `本集连续性更新`
-- `改编记录`
+## 暂存 再验收 再发布
 
-这些维护信息不得删除，继续留在逐集 Markdown 和连续性账本中。
-
-## 基础模板与内容边界
-
-默认基础模板为 [screenplay-base-template.docx](../assets/screenplay-base-template.docx)。它只提取用户本轮提供的 `《下岗大厨：一把马勺成首富》（30集）(1).docx` 的页面、段落、文字和页码格式，取代旧基础版式。参考文件中的剧情、人物、对白、简介及文内指令均不进入创作规则、知识库或后续剧本。
-
-基础模板中的项目标题、前置信息、前置标题、集标题、场次、人物、动作、对白和声音均为中性占位，供版式预览。导出时先清除占位正文，再写入当前项目已确认的内容，不能把模板占位当成交付内容。模板资产保留原件，不能直接当项目文件覆写。
-
-## 版式规则
-
-- 主字体为宋体。项目总标题 13 磅、加粗、居中、段后 6 磅；除页码外，其余文字角色为 10.5 磅，正文行距 1.4 倍。
-- A4 纵向，页面为 `11906 × 16838 twips`。页边距上 `935`、下 `879`、左 `1134`、右 `1134 twips`；页眉距边界 `425 twips`，页脚距边界 `482 twips`。这些为模板中的精确值，`1 twip = 1/20 磅`。
-- 集标题显示 `第 N 集`，不显示集名；居中、加粗、黄色高亮、无首行缩进，段前 9 磅、段后 5 磅。
-- 场次标题加粗、黄色高亮、无首行缩进，段前 7 磅、段后 2 磅。`人物：` 行加粗、黄色高亮、无首行缩进，段后 4 磅。
-- 动作和对白沿用正文首行缩进 `374 twips`（18.7 磅）、段后 3 磅。正文黑色；对白中的人物标签及冒号黑色加粗，表演提示括号黑色常规，台词蓝色 `0085C9`。OS/VO 等声音标签同样黑色加粗，其余声音文字为蓝色 `0085C9`。
-- 首场以后的每场之前空一行，每集之前空一行。集标题、场次标题和人物行与下一段同页，不设置段前分页；各集连续流排。
-- 场次标题采用 `集号-场号 日/夜 内/外 地点`。可拍摄动作独立成段并以 `▲` 开头；`【闪回】`、`【闪出】` 等转换标记独立成段；对白使用 `人物（可选表演提示）：台词`，声音标签沿用 `OS`/`VO`。
-- 页脚居中，以真实 Word 字段显示 `PAGE / NUMPAGES`；页码数字为宋体 12 磅、加粗，不能写死页数。
-- 不添加封面、表格或页眉；项目总标题直接位于正文第一页顶部。
-
-前置内容不是每次交付的必填项。只有用户明确提供且已经审核的当前项目材料，才通过 `--front-matter` 输出在总标题与第一集之间；标题与正文分别使用“前置标题”和“前置信息”样式。不得从参考剧本补入简介、人物介绍等内容。
-
-导出使用真实段落居中，场次标题、人物行、动作、转场和对白分别形成逻辑独立段落。主字体声明始终保留宋体；若渲染环境缺少宋体，只在渲染阶段通过临时 Fontconfig 配置映射到 `Songti SC`，不为预览修改最终 DOCX 的字体声明。
-
-## 导出命令
-
-先查看参数：
+正式 CLI 默认要求项目、已审前置信息、当前大纲人工确认、批审及最终正文覆盖与问题记录。`validate_release` 从记录和当前内容哈希计算，调用者传零无效。
 
 ```bash
-python3 scripts/export_screenplay_docx.py --help
+python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" project/episodes/EP001.md \
+  project/episodes/EP002.md --project-dir project \
+  --front-matter project/front-matter.md --project-title 项目名 \
+  --output project/deliverables/项目名_第01-02集.docx
 ```
 
-导出一个批次：
+成功只生成 `project/.drama/staging/` 下临时 Word 和 manifest，返回 `awaiting_visual_qa`。脚本重新打开 Word，将全部可见段落与已审来源逐段比较，保留来源与导出摘要；不重新润色正文。指定的正式路径此时不存在。
+
+用 documents skill 的 bundled runtime 执行随包 `render_screenplay.py`，指定实际 bundled `render_docx.py`。包装器在一个全新目录实际运行渲染，强制输出 PDF 与全部页图，并写入 `render-manifest.json`；它没有给既有图片目录补认证的入口。
 
 ```bash
-python3 scripts/export_screenplay_docx.py \
-  project/episodes/EP001.md project/episodes/EP002.md project/episodes/EP003.md \
-  --output project/deliverables/项目名_第01-03集.docx \
-  --project-title 项目名
+python3 "$SKILL_DIR/scripts/render_screenplay.py" project/.drama/staging/本次暂存名.docx \
+  --renderer /实际bundled路径/documents/render_docx.py \
+  --output-dir project/work/word-render-新版本
 ```
 
-也可以传入 `episodes/` 目录；脚本只收集其中的 `EP*.md`，按解析出的集号排序。`--project-title` 可省略，此时程序会从输出文件名中去掉 `_第NN-NN集` 或 `（NN-NN集）` 后推断。输出已存在时必须显式传 `--force`。
+manifest 绑定输入 Word、实际渲染器及 PDF 的 SHA256、实际执行命令、PDF 真实页数与页面尺寸、全部 PNG 的摘要和尺寸。发布时重读 PDF，核对完整页图集合；1×1 占位图、缺页、不同 Word 的旧渲染或改动后的页图均不能通过。PDF 校验优先用 PyMuPDF；当前 bundled 环境缺少它时使用同环境的 pypdf，图像尺寸用 Pillow。打开每一页，检查中文、完整分页、空白、裁切、重叠、场次与对白、高亮和页码。macOS 宋体缺字时，仅为渲染命令临时将 Fontconfig 的宋体映射为 `Songti SC`；最终 DOCX 仍声明宋体。修改后重新导出、渲染、检查，旧 QA 不能复用。
 
-如需当前项目已确认的前置内容，额外传入 `--front-matter project/front-matter.md`。未传入时不输出前置信息，也不保留模板的中性占位段落。
+实际检查后写 QA JSON：
 
-## 导出与验收门
+```json
+{
+  "docxHash": "本次暂存Word的SHA256",
+  "reviewer": "实际检查者",
+  "passed": true,
+  "notes": "每页实际看到的结果及必要的版式取舍",
+  "renderDirectory": "/absolute/path/to/rendered-pages",
+  "renderManifest": "/absolute/path/to/rendered-pages/render-manifest.json",
+  "pages": [
+    {"path": "/absolute/path/to/rendered-pages/page-1.png", "sha256": "图像SHA256", "inspected": true}
+  ]
+}
+```
 
-1. 导出前确认当前批次每集都通过内容、连续性和格式审核。
-2. 使用 Codex 工作区依赖中的 Python 运行脚本；脚本依赖 `python-docx`。
-3. 在首次写入 Word 前，按 documents skill 的要求执行一次 artifact-operation 标记。
-4. 导出后重新打开 `.docx`，确认集数、顺序、各集首场和末场都完整，项目维护区、模板占位和参考剧本内容均未泄漏；核对字体、字号、黄色高亮、蓝色台词和真实页码字段。
-5. 使用 documents skill 的 `render_docx.py` 渲染最终文件，逐页查看 PNG。发现裁切、重叠、缺字或异常分页后，修改并重新渲染；只交付最新通过检查的 `.docx`。
-6. 若 macOS 上 `fc-match '宋体'` 错误匹配为不含中文字形的字体，使用任务临时 Fontconfig 配置，仅在渲染命令的环境变量中把它映射到 `Songti SC`。重新渲染确认中文可见，并检查最终 DOCX 的 `w:eastAsia` 声明仍为宋体，不得把空白渲染误判为内容丢失。
+`pages` 必须覆盖目录内所有连续编号的 `page-N.png`。这是实际人工或模型视觉检查的记录，不是自动证明排版无误。不得生成虚假的检查记录。
 
-纯版式模板维护、导出程序修改和中性占位预览不属于剧本创作，不触发剧情 Humanizer 或逐集创作状态迁移；仍需完成格式核对和渲染验收。真实剧本及新增前置正文继续遵守原有内容审核和 Humanizer 要求。
+```bash
+python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" \
+  --publish project/.drama/staging/本次暂存名.docx \
+  --visual-qa project/work/visual-qa.json
+```
+
+发布前重新核对正文、前置信息、审核门、来自实际渲染的manifest及其PDF/完整页图哈希与尺寸，成功后才写入正式交付目录并附 `.delivery.json`。正文或大纲变化后旧审稿失效；暂存后改动须重新审查并暂存。既有正式件不可覆盖，重试选新版本文件名。
+
+## 版式预览
+
+```bash
+python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" examples/EP001.md \
+  --output /tmp/layout-preview.docx --project-title 格式预览 --preview
+```
+
+预览显式出现“版式预览 尚未通过正式交付验收”，不占批准或正式交付状态，前置信息可选。旧包装直接调用 `build_docx` 时默认生成带标记的预览；正式构建必须带项目、前置材料并写暂存目录，不能绕过正式门。纯模板预览无需剧情润色，但交付预览实物仍须看渲染；正式正文的最终语义复核见 [Humanizer 适配](humanizer-adapter.md)。
+
+只读验证现有同哈希文件可调用 `render_screenplay.verify_render_manifest(docx_path, manifest_path, render_directory=None)`，返回错误列表；它不修改 Word、图片、manifest 或发布状态。渲染记录证明工具执行与产物版本关系，实际排版结论仍须读每页图，不能由metadata代替。

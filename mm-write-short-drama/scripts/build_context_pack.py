@@ -88,9 +88,12 @@ def main() -> int:
     parts = [f"# EP{start:03d}—EP{end:03d} 上下文包", "", "> 这是源文件的便利快照，不是新的事实源。", ""]
     for title, relative in (
         ("项目状态", ".drama/project-state.json"),
+        ("当前工作流与大纲确认", ".drama/workflow.json"),
         ("产物依赖索引", ".drama/artifact-index.json"),
         ("项目启动单", "00-project-brief.md"),
         ("锁定决策", "locked-decisions.md"),
+        ("来源证据", "source-evidence.json"),
+        ("已审故事底稿", "03-story-treatment.md"),
         ("故事圣经", "04-story-bible.md"),
         ("整季结构", "05-season-architecture.md"),
         ("最近变更", "change-log.md"),

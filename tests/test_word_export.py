@@ -108,7 +108,7 @@ class WordExportTests(unittest.TestCase):
         result = subprocess.run(
             [
                 sys.executable, str(EXPORTER), str(self.ep2), str(self.ep1),
-                "--output", str(output), "--project-title", "格式回归样例", *extra,
+                "--output", str(output), "--project-title", "格式回归样例", "--preview", *extra,
             ],
             text=True,
             capture_output=True,
@@ -202,7 +202,7 @@ class WordExportTests(unittest.TestCase):
             else:
                 self.assertEqual(color, "0085C9", char)
 
-    def test_footer_uses_live_fields_and_optional_front_matter_is_explicit(self) -> None:
+    def test_preview_uses_live_fields_and_optional_front_matter_is_explicit(self) -> None:
         output, _ = self.export()
         with ZipFile(output) as package:
             footer_files = [name for name in package.namelist() if re.fullmatch(r"word/footer\d+\.xml", name)]

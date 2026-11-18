@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 SCHEMA_VERSION = "1.0.0"
-SOURCE_MODES = {"original", "adaptation", "source_remix"}
+SOURCE_MODES = {"original", "adaptation", "source_remix", "market_research"}
 PRODUCTION_MODES = {"live_action", "ai_drama", "hybrid", "unspecified"}
 ORIENTATIONS = {"vertical", "horizontal", "custom"}
 DELIVERY_SCOPES = {"diagnosis", "outline", "episodes", "screenplay", "review", "revision", "knowledge", "unspecified"}
@@ -159,6 +159,12 @@ def validate(root: Path) -> tuple[list[str], list[str]]:
                 errors.append(f"episode {number}: approved with blocking issues")
             if not episode.get("basedOnStoryBibleRevision") or not episode.get("basedOnMatrixRevision"):
                 errors.append(f"episode {number}: approved without upstream revisions")
+            from workflow_lib import validate_episode_review
+            for error in validate_episode_review(root, number):
+                errors.append(f"episode {number}: {error}")
+            for key, field in (("storyBible", "basedOnStoryBibleRevision"), ("episodeMatrix", "basedOnMatrixRevision")):
+                if artifacts.get(key, {}).get("revision") != episode.get(field):
+                    errors.append(f"episode {number}: obsolete {key} revision")
 
     for line_number, line in enumerate(log_path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():

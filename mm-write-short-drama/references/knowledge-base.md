@@ -2,7 +2,7 @@
 
 ## 分离原则
 
-把 `SKILL.md` 和 `references/` 视为稳定流程，把仓库根目录 `knowledge-base/` 视为个人长期知识。升级 Skill 时保留知识库；录入知识时不要把个人技巧追加到 `SKILL.md`。
+把 `SKILL.md` 和 `references/` 视为稳定流程，把工作区根目录 `knowledge-base/` 视为个人长期知识。Skill 内的 `knowledge-base/` 是随包提供的五书方法摘要，不含原书全文。升级只替换随包库，不覆盖工作区个人卡。
 
 ## 录入
 
@@ -34,6 +34,27 @@ python3 scripts/search_knowledge.py "当前任务摘要" \
 ```
 
 默认只返回 `active`。按以下顺序裁决：当前项目明确要求 → 项目锁定事实 → 安全/版权硬约束 → active hard → 题材/制作范围匹配的 preferred → optional → experimental。知识卡与前三项冲突时，不改项目；记录该卡被覆盖及原因。
+
+未传 `--kb` 时先找当前目录及父目录的个人库，再合并随包库；即使没有个人库也能使用已审核的24张摘要卡。同一能力有适用的个人 active 卡时优先个人卡。`--no-builtin` 可显式只查个人库。检索默认输出 `context`，包含完整动作、例外、自检和来源，`table` 仅供盘点。一次任务通常选《故事》1张，涉及两类问题最多2张；脚本默认限制2张，盘点才使用 `--story-limit 19 --limit 30`。查询读取当前卡片，避免旧索引造成卡片状态失真，默认不改写个人库。
+
+## 固定五书导入与升级
+
+随包输入位于 `assets/book-capability-inputs/`，固定到 `CodeBlueFriend/short-drama-book-skills@6e99009572a64f99d60134405fbf1cf200b0dfe4`。只使用仓库根目录 `knowledge-inbox` 的5份前四书材料和19份《故事》材料。输入清单包含各稿SHA-256及《故事》来源版本清单；脚本先校验全部输入，再修改目标库。
+
+```bash
+python3 scripts/import_book_capabilities.py --kb /tmp/five-books-draft --report /tmp/import-draft.json
+python3 scripts/validate_knowledge.py --kb /tmp/five-books-draft --json
+# 逐卡核对来源范围、例外和执行字段后，显式记录复核理由：
+python3 scripts/import_book_capabilities.py --kb /tmp/five-books-draft \
+  --activate-reviewed --review-note "填写本次实际完成的核验范围"
+# 旧六卡升级需显式选择；仍保留同一卡ID、旧稿和上游版本信息：
+python3 scripts/import_book_capabilities.py --kb /path/to/personal-knowledge-base \
+  --upgrade-legacy-six --activate-reviewed --review-note "填写旧卡对读结果"
+```
+
+`capability_revision` 表示上游修订，与库内 `version` 分开。《故事》01—06为上游修订2，07—19为修订1。相同能力即使规则未改，也核对来源定位。已识别的旧六卡归档后更新；同修订的规则差异、多个当前版本和未决冲突均保留旧卡并报告，不静默覆盖。相同输入重跑不新增、不改写原卡或日志。通用 `ingest_knowledge.py` 仍负责普通技巧录入；不得用它的相似度查重替代能力版本迁移。
+
+卡片中“原书已核”的文字是上游交接方的记录；本次只对固定导入稿及其清单完成核对，未重新逐字核验原书。保留纸本页码、第三方文件质量等缺口。核验范围见各卡 `source_verification` 与 `activation_review`。
 
 应用前检查 `exceptions`。只有规则实际改变了方案、文字或审核结论，才把 ID 记为“实际使用”；只看过但未使用的规则可记为“检索但未使用”。
 

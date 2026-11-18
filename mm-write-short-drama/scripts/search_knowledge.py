@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from knowledge_lib import list_value, load_jsonl, rebuild_index, resolve_kb, tokenize
+from knowledge_lib import BUILTIN_KB, iter_cards, list_value, rebuild_index, search_roots, tokenize
 
 
 PRIORITY_SCORE = {"hard": 4.0, "preferred": 3.0, "optional": 2.0, "experimental": 1.0}
@@ -63,7 +63,7 @@ def markdown_table(cards: list[dict[str, Any]]) -> str:
 
 
 def context_block(cards: list[dict[str, Any]]) -> str:
-    lines = ["## 本任务检索到的个人编剧规则", ""]
+    lines = ["## 本任务检索到的编剧规则（个人优先，随包兜底）", ""]
     if not cards:
         lines.append("> 没有匹配且可应用的 active 规则。")
         return "\n".join(lines)
@@ -73,6 +73,8 @@ def context_block(cards: list[dict[str, Any]]) -> str:
         suffix = f"；例外：{'、'.join(str(item) for item in exceptions)}" if exceptions else ""
         lines.append(f"- **{card['id']}** [{card.get('priority', '')}] {rule}{suffix}。")
         for key, label in (("capability_id", "原能力"), ("source_note", "来源范围"),
+                           ("capability_revision", "上游能力修订"), ("version", "库内编辑版本"),
+                           ("source_commit", "来源提交"), ("_knowledge_origin", "加载位置"),
                            ("source_url", "来源链接"), ("source_verification", "核验"),
                            ("triggers", "触发"), ("diagnosis", "诊断"), ("action", "动作"),
                            ("output_contract", "输出"), ("self_check", "自检"),
@@ -101,23 +103,39 @@ def main() -> int:
     parser.add_argument("--production-mode")
     parser.add_argument("--status", default="active", help="Comma-separated statuses; defaults to active only")
     parser.add_argument("--limit", type=int, default=10)
-    parser.add_argument("--format", choices=("table", "json", "context", "ids"), default="table")
+    parser.add_argument("--format", choices=("table", "json", "context", "ids"), default="context")
+    parser.add_argument("--no-builtin", action="store_true", help="Search the personal library alone")
+    parser.add_argument("--story-limit", type=int, default=2, help="Maximum Story cards per task; use 19 only for inventory")
     parser.add_argument("--rebuild", action="store_true", help="Rebuild deterministic indexes before searching")
     args = parser.parse_args()
-    if args.limit < 1:
-        parser.error("--limit must be positive")
+    if args.limit < 1 or args.story_limit < 1:
+        parser.error("--limit and --story-limit must be positive")
     try:
-        root = resolve_kb(args.kb)
-        if args.rebuild or not (root / "index" / "cards.jsonl").exists():
-            rebuild_index(root)
-        cards = load_jsonl(root / "index" / "cards.jsonl")
+        roots = search_roots(args.kb, not args.no_builtin)
+        cards = []
+        for root in roots:
+            if args.rebuild and root != BUILTIN_KB.resolve():
+                rebuild_index(root)
+            # Read current cards so stale indexes cannot silently re-enable edited rules.
+            for card in iter_cards(root):
+                cards.append({**card, "_knowledge_origin": str(root),
+                              "_builtin": root == BUILTIN_KB.resolve()})
     except (FileNotFoundError, ValueError) as exc:
         parser.error(str(exc))
 
     statuses = set(list_value(args.status, default="active"))
+    personal_capabilities = {
+        card.get("capability_id") for card in cards
+        if not card["_builtin"] and card.get("status") in statuses
+        and card.get("capability_id") and scope_matches(card, "stage", args.stage)
+        and scope_matches(card, "genre", args.genre)
+        and scope_matches(card, "production_mode", args.production_mode)
+    }
     selected = []
     for card in cards:
         if card.get("status") not in statuses:
+            continue
+        if card["_builtin"] and card.get("capability_id") in personal_capabilities:
             continue
         if args.capability and card.get("capability_id") != args.capability:
             continue
@@ -134,7 +152,17 @@ def main() -> int:
             continue
         selected.append({**card, "_score": round(relevance, 4)})
     selected.sort(key=lambda item: (-float(item["_score"]), str(item.get("id"))))
-    selected = selected[: args.limit]
+    limited = []
+    story_count = 0
+    for card in selected:
+        if str(card.get("capability_id", "")).startswith("cap.mckee-story-short-drama."):
+            if story_count >= args.story_limit:
+                continue
+            story_count += 1
+        limited.append(card)
+        if len(limited) >= args.limit:
+            break
+    selected = limited
 
     if args.format == "json":
         print(json.dumps(selected, ensure_ascii=False, indent=2))
