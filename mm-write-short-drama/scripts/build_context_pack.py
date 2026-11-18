@@ -87,6 +87,8 @@ def main() -> int:
 
     parts = [f"# EP{start:03d}—EP{end:03d} 上下文包", "", "> 这是源文件的便利快照，不是新的事实源。", ""]
     for title, relative in (
+        ("项目状态", ".drama/project-state.json"),
+        ("产物依赖索引", ".drama/artifact-index.json"),
         ("项目启动单", "00-project-brief.md"),
         ("锁定决策", "locked-decisions.md"),
         ("故事圣经", "04-story-bible.md"),
@@ -96,7 +98,11 @@ def main() -> int:
     ):
         parts.append(text_section(title, root / relative, args.max_file_chars))
     parts.extend(["## 当前批次分集卡", "", matrix_rows(root / "06-episode-matrix.csv", start, end), ""])
-    for name in ("timeline.csv", "character-state.csv", "knowledge-state.csv", "props-ledger.csv", "hooks-ledger.csv"):
+    for name in (
+        "timeline.csv", "character-state.csv", "knowledge-state.csv",
+        "relationships.csv", "props-ledger.csv", "evidence.csv",
+        "hooks-ledger.csv", "foreshadowing.csv",
+    ):
         parts.extend([f"## {name}", "", ledger_excerpt(root / "continuity" / name, start, args.previous), ""])
 
     output.parent.mkdir(parents=True, exist_ok=True)

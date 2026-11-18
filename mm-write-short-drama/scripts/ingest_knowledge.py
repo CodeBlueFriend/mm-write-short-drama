@@ -33,6 +33,16 @@ from knowledge_lib import (
 
 
 FIELD_MAP = {
+    "来源": "source_note",
+    "来源链接": "source_url",
+    "仓颉能力 ID": "capability_id",
+    "触发": "triggers",
+    "诊断": "diagnosis",
+    "动作": "action",
+    "输出": "output_contract",
+    "自检": "self_check",
+    "短剧适配": "adaptation",
+    "来源核验": "source_verification",
     "技巧名称": "title",
     "标题": "title",
     "title": "title",
@@ -156,6 +166,10 @@ def make_card(candidate: dict[str, Any], source: dict[str, str], args: argparse.
         "positive_example": str(args.positive_example or candidate.get("positive_example") or ""),
         "negative_example": str(args.negative_example or candidate.get("negative_example") or ""),
         "source": source,
+        **{key: candidate[key] for key in (
+            "source_note", "source_url", "capability_id", "triggers", "diagnosis",
+            "action", "output_contract", "self_check", "adaptation", "source_verification"
+        ) if candidate.get(key)},
         "status": status,
         "version": 1,
         "created_at": now_iso(),

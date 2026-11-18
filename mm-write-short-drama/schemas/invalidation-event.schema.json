@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mm-write-short-drama/schemas/invalidation-event.schema.json",
+  "title": "Artifact invalidation log event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "eventId", "timestamp", "changed", "direct", "indirect", "episodes", "applied"],
+  "properties": {
+    "schemaVersion": {"const": "1.0.0"},
+    "eventId": {"type": "string", "minLength": 1},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "changed": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "direct": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "indirect": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "episodes": {"type": "array", "items": {"type": "string", "pattern": "^EP[0-9]{3}$"}, "uniqueItems": true},
+    "applied": {"type": "boolean"},
+    "reason": {"type": ["string", "null"]}
+  }
+}

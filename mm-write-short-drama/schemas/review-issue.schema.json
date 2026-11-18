@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mm-write-short-drama/schemas/review-issue.schema.json",
+  "title": "Evidence-backed screenplay review issue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "issueId", "severity", "category", "location",
+    "evidence", "reason", "suggestedFix", "status", "regressionCheck"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "1.0.0"},
+    "issueId": {"type": "string", "pattern": "^[A-Z0-9_-]+$"},
+    "severity": {"enum": ["P0", "P1", "P2", "P3"]},
+    "category": {
+      "enum": [
+        "structure", "causality", "adaptation", "character", "knowledge_state",
+        "timeline", "spatial_continuity", "relationship", "prop", "evidence",
+        "hook", "foreshadowing", "rhythm", "emotional_payoff", "dialogue",
+        "anti_ai", "compliance", "production", "format"
+      ]
+    },
+    "location": {"type": "string", "minLength": 1},
+    "evidence": {"type": "string", "minLength": 1},
+    "conflictWith": {"type": ["string", "null"]},
+    "reason": {"type": "string", "minLength": 1},
+    "impactScope": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "default": []},
+    "suggestedFix": {"type": "string", "minLength": 1},
+    "status": {"enum": ["open", "accepted_by_user", "fixed", "wont_fix", "superseded"]},
+    "fixedInRevision": {"type": ["integer", "null"], "minimum": 1},
+    "regressionCheck": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

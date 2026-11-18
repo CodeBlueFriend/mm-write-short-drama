@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "issueId": "EP003-CONT-004",
+  "severity": "P1",
+  "category": "knowledge_state",
+  "location": "episodes/EP003.md#3-2",
+  "evidence": "角色说出了尚未获得的事实",
+  "conflictWith": "continuity/knowledge-state.csv#FACT-009",
+  "reason": "角色提前知道信息",
+  "impactScope": ["EP003", "EP004"],
+  "suggestedFix": "把断言改为有证据支持的怀疑",
+  "status": "open",
+  "fixedInRevision": null,
+  "regressionCheck": ["EP003", "EP004", "EP005"]
+}

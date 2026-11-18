@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "issueId": "EP001-CONT-001",
+  "severity": "P1",
+  "category": "knowledge_state",
+  "location": "episodes/EP001.md#1-2",
+  "evidence": "填写待审文本中的具体证据",
+  "conflictWith": "continuity/knowledge-state.csv#FACT-001",
+  "reason": "填写为何构成问题",
+  "impactScope": ["EP001"],
+  "suggestedFix": "填写不扩大改动范围的建议修法",
+  "status": "open",
+  "fixedInRevision": null,
+  "regressionCheck": ["EP001"]
+}
