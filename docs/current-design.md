@@ -12,25 +12,29 @@
 
 先判断新建、续作、局部改稿或审现稿。局部改几句可直接提取范围内事实，不强制建整季项目。续作运行 `workflow.py PROJECT status`，恢复当前等待点并检查已变化输入。
 
-| 用户选择 | init参数 | 状态值 | 来源证据 |
+新项目第一个用户选择必须是AI或真人，选完立即选择创作来源；不能先问来源或题材。随后了解题材与其他普通需求，再选单集时长和期望集数。已明确的项直接复用，不重复问。题材等普通需求可先标待定。`hybrid / unspecified` 仅作旧项目和评估兼容，不满足新项目制作方式选择；协作模式 `strict / assisted / automatic` 均不能跳过大纲人工确认。
+
+| 创作来源（第二步） | source-mode回执值 | init骨架mode | 来源证据 |
 |---|---|---|---|
-| 小说改编 | adaptation | adaptation | 原著版本/范围/定位、授权状态、改编取舍，未提供后续标候选。 |
-| 自主创意 | original | original | 原始创意、锁定内容、待定方向。 |
-| 近期检索后创作 | market-research | market_research | 日期、平台/地区/类型、时间窗口、指标/榜期、链接、实际读取层级与可见证据、差异。 |
-| 旧素材再创作 | source-remix | source_remix | 保留旧来源含义，不自动改标近期检索。 |
+| 自己编写 | original | original | 原始创意、锁定内容、待定方向。 |
+| 已有素材改编 | adaptation | adaptation | 素材版本/范围/定位、授权状态、改编取舍；未提供后续标候选。 |
+| 检索近期热门剧本后改编/再创作 | market_research | market-research | 日期、平台/地区/题材、时间窗口、指标/榜期、链接、实际读取层级、可见证据及改编取舍。 |
+| 旧素材再创作（仅兼容） | source_remix | source-remix | 保留旧来源含义，不自动改标近期热门剧本检索改编。 |
 
-新项目按“`live_action`真人或 `ai_drama` AI → 单集时长 → 期望集数”先取得真实用户选择。`hybrid / unspecified` 仅作旧项目和评估兼容，不满足新项目规格门；协作模式为 `strict / assisted / automatic`。三种协作模式均不能跳过大纲人工确认。知识卡制作模式使用自身约定 `live-action / ai / hybrid / unspecified / all`，检索时按对应约定传参。
+初始化可只建空骨架；`init --mode` 不构成用户来源选择。来源回执明确后，程序补齐相应空骨架与索引依赖、不覆盖已有正文。切换明确来源时，旧来源证据按原字节归档至 `.drama/source-route-history/<sha>.json`，新路由证据重置登记。四项规格缺选择时保持 `awaiting_production_specs`，`status` 按 `productionMode → sourceMode → duration → episodeCount → episodePlan` 显示当前等待项。不默认真人、自主创意或6集。四项未齐不得构思底稿、大纲，或运行 treatment/outline 审读、分集/正文；原始材料可先保存。
 
-初始化可只建启动骨架；缺选择保持 `awaiting_production_specs`，`status` 按制作方式、时长、期望集数显示当前等待项。已说清的项直接记录，不默认真人6集。三项未齐不得构思底稿、大纲，或运行 treatment/outline 审读、分集/正文。来源原始材料可先保存。
-
-规格记录于 `.drama/production-specs.json`。期望集数支持具体数或范围；实际规划总数与理由独立保存在 `.drama/episode-plan.json`（`plannedTotalEpisodes/planReason`），`state.totalEpisodes` 镜像实际数，不得冒填。实际数可合理浮动，偏离期望具体数或范围须说明剧情理由，不套固定±10%，最终随大纲人工确认。
+`.drama/production-specs.json` 保存制作方式、`sourceMode:null|enum`、单集时长、期望集数及各项真实选择回执。期望集数支持具体数或范围；实际规划总数与理由独立保存在 `.drama/episode-plan.json`（`plannedTotalEpisodes/planReason`），`state.totalEpisodes` 镜像实际数，不得冒填。实际数可合理浮动，偏离期望具体数或范围须说明剧情理由，不套固定±10%，最终随大纲人工确认。
 
 本次用户指定时长策略：真人推荐90秒，常见60—180秒、爆款常规80—120秒，新项目硬上限180秒；更长旧存量不作新项目默认。AI主流50—60秒、90秒可选，超过120秒少见但允许用户明确自定义并标非常规。不为此联网查规范，不宣称是新查到的平台法规。
+
+以下先预建空骨架，再按真实用户选择记录；骨架mode不能替代第二步来源回执：
 
 ```bash
 python3 "$SKILL_DIR/scripts/init_project.py" "$PROJECT" --mode original
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
   --production-mode live_action --user-quote '用户选择真人的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --source-mode original --user-quote '用户选择自己编写的原话' --message-ref '真实消息定位'
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
   --duration-seconds 90 \
   --user-quote '用户选择90秒的原话' --message-ref '真实消息定位'
@@ -39,9 +43,17 @@ python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
   --user-quote '用户期望40到60集的原话' --message-ref '真实消息定位'
 ```
 
-所有原话和定位示例必须替换为真实消息。范围时长用 `--duration-range A-B`；init可带 `--duration-seconds/--duration-range`、`--episode-count` 和 `--specs-user-quote/--specs-message-ref`，新增时长/集数参数无回执会拒绝初始化；旧制作方式/总数参数单独出现只作待核候选，不猜成已选。`set-plan --total-episodes 58 --reason '实际剧情理由'` 在底稿通过、完整故事规划后执行，不代表用户批准。底稿审读只绑定规格；大纲、批审、final及确认另绑定实际plan，定实际数不使已审底稿无故失效。
+来源之后、时长之前了解题材等普通需求。所有原话和定位示例必须替换为真实消息；范围时长用 `--duration-range A-B`。新增来源/时长/集数参数无回执会拒绝初始化；旧制作方式/骨架路线/总数参数不自动成为已选。用户已明确四项、例中的自己编写来源也已明确后，可完整初始化：
 
-来源登记 `source-evidence.json` 与连续叙述的 `03-story-treatment.md` 随后进入主流程。小说和市场入口须记录来源；读取失败要显式保留缺口，不能把宣发分析写成已通读剧本或已核热度。骨架文件存在不等于完成。
+```bash
+python3 "$SKILL_DIR/scripts/init_project.py" ./projects/complete-example --mode original \
+  --production-mode live_action --source-mode original --duration-seconds 90 --episode-count '40-60' \
+  --specs-user-quote '用户实际说全四项规格的原话' --specs-message-ref '真实消息定位'
+```
+
+`set-plan --total-episodes 58 --reason '实际剧情理由'` 在底稿通过、完整故事规划后执行，不代表用户批准。底稿审读只绑定规格；大纲、批审、final及确认另绑定实际plan，定实际数不使已审底稿无故失效。
+
+来源登记 `source-evidence.json` 与连续叙述的 `03-story-treatment.md` 随后进入主流程。已有素材和市场入口须记录来源；读取失败要显式保留缺口。只有简介或宣发时按实际层级分析，不能把它写成已通读完整剧本或已核热度；改编/再创作保留来源类型、授权状态、依据、定位和差异，不强制换成全新结局；用户指定只作原创参考时仍按其要求原创。骨架文件存在不等于完成。知识卡制作模式使用自身约定 `live-action / ai / hybrid / unspecified / all`，检索时按对应约定传参。
 
 ## 底稿、大纲与确认
 
@@ -79,7 +91,8 @@ check-writing
 | 记录 | 用途 |
 |---|---|
 | `.drama/project-state.json` | 路由、revision、逐集状态与上游版本；`state.totalEpisodes`为大纲实际总数。 |
-| `.drama/production-specs.json` | 用户选择的制作方式、时长、期望集数和真实回执，与实际总数分开。 |
+| `.drama/production-specs.json` | 用户选择的制作方式、创作来源、时长、期望集数和真实回执，与实际总数分开。 |
+| `.drama/source-route-history/<sha>.json` | 切换明确来源前按原字节归档的旧证据；不冒充新来源。 |
 | `.drama/episode-plan.json` | `plannedTotalEpisodes/planReason`：大纲实际总数和理由；state镜像总数。 |
 | `.drama/artifact-index.json` | 产物路径、revision、状态和dependsOn。 |
 | `.drama/workflow.json` | 阶段审读、确认历史和当前等待点。 |
@@ -112,7 +125,7 @@ check-writing
 
 ## 正式Word与预览
 
-当前项目正文前必须依次有九模块：剧本名、来源、类型/短剧类型、集数、剧名寓意、热门元素、创作理由、故事梗概、主要角色。集数含大纲实际规划总数与本稿范围，不能用用户期望数/范围冒填；内容来自已确认材料及实际交付稿。前置内容纳入final审读，禁止占位、虚构署名、样剧串入、范围断号/重复。原参考模板的字段分段仍应以私有原件实物核对，不从样剧内容填当前项目。
+当前项目正文前必须依次有九模块：剧本名、来源、类型/短剧类型、集数、剧名寓意、热门元素、创作理由、故事梗概、主要角色。“类型”填写题材，制作方式独立记录。集数含大纲实际规划总数与本稿范围，不能用用户期望数/范围冒填；内容来自已确认材料及实际交付稿。前置内容纳入final审读，禁止占位、虚构署名、样剧串入、范围断号/重复。原参考模板的字段分段仍应以私有原件实物核对，不从样剧内容填当前项目。
 
 正式导出要求 `--project-dir`、`--front-matter`及当前有效大纲/批审/final/语义复核，先在 `.drama/staging/`生成临时Word、核对可见正文与源稿；还未进入正式交付目录。渲染必须通过 `render_screenplay.py` 实际调用指定的bundled文档渲染器，生成PDF、完整页图及绑定输入Word/渲染器/PDF/页图摘要、实际命令、真实PDF页数和图像尺寸的manifest。已有目录不能补认证。随后逐页实际检查，QA中的 `renderManifest` 必须指向包装器本次生成的文件，`renderDirectory` 指向同目录。发布重新核验manifest、真实PDF页数、每页PNG尺寸及摘要，不能只信QA自报docxHash；1×1占位图、缺页和旧来源均拒绝。使用 `--publish ... --visual-qa ...`最终写正式文件。重试不能覆盖已交付合格文件，任何输入变化须重新验收。
 

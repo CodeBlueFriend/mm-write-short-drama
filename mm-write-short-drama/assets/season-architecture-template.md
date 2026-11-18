@@ -5,6 +5,8 @@
 ## 规格与规划
 
 - 用户已选制作方式：
+- 用户已选创作来源：
+- 题材与子类型（普通需求，可待定）：
 - 用户已选单集时长：
 - 用户期望集数（具体数或范围，见 `.drama/production-specs.json`）：
 - 大纲实际规划总集数（`.drama/episode-plan.json`，`state.totalEpisodes`镜像，用 `set-plan` 记录）：

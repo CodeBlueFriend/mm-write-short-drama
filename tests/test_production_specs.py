@@ -21,6 +21,7 @@ from workflow_fixture import confirm, finish_review, run, seed
 
 TAG = "software-fixture"
 QUOTE = "software-fixture: synthetic production choices; no real creator approval"
+SELECTION_FIELDS = ("productionMode", "sourceMode", "duration", "episodeCountPreference")
 
 
 class ProductionSpecsTests(unittest.TestCase):
@@ -58,9 +59,9 @@ class ProductionSpecsTests(unittest.TestCase):
         return self.command("set-specs", *args, "--user-quote", QUOTE,
                             "--message-ref", TAG, root=root, succeeds=succeeds)
 
-    def complete(self, root=None, mode="live_action", duration="90", count="2"):
+    def complete(self, root=None, mode="live_action", source_mode="original", duration="90", count="2"):
         duration_flag = "--duration-range" if "-" in duration else "--duration-seconds"
-        return self.select("--production-mode", mode, duration_flag, duration,
+        return self.select("--production-mode", mode, "--source-mode", source_mode, duration_flag, duration,
                            "--episode-count", count, root=root)
 
     def plan(self, total, root=None, reason="software-fixture: deterministic plan for gate testing"):
@@ -78,7 +79,7 @@ class ProductionSpecsTests(unittest.TestCase):
     def test_legacy_init_options_do_not_supply_actual_user_selections(self):
         root = self.new_project("legacy", "original", "strict", "--production-mode",
                                 "live_action", "--total-episodes", "60")
-        for field in ("productionMode", "duration", "episodeCountPreference"):
+        for field in SELECTION_FIELDS:
             self.assertIsNone(self.specs(root)[field])
         self.pack(root=root)
         self.command("check-writing", root=root, succeeds=False)
@@ -87,14 +88,16 @@ class ProductionSpecsTests(unittest.TestCase):
 
     def test_init_records_receipted_choices_and_still_awaits_actual_plan(self):
         root = self.new_project("receipted-init", "original", "strict",
-                                "--production-mode", "ai_drama", "--duration-range", "50-60",
+                                "--production-mode", "ai_drama", "--source-mode", "original", "--duration-range", "50-60",
                                 "--episode-count", "40-60", "--total-episodes", "60",
                                 "--specs-user-quote", QUOTE, "--specs-message-ref", TAG)
         selected = self.specs(root)
         self.assertEqual(selected["productionMode"], "ai_drama")
+        self.assertEqual(selected["sourceMode"], "original")
+        self.assertNotIn("genre", selected)
         self.assertEqual((selected["duration"]["minSeconds"], selected["duration"]["maxSeconds"]), (50, 60))
         self.assertEqual(selected["episodeCountPreference"]["raw"], "40-60")
-        for field in ("productionMode", "duration", "episodeCountPreference"):
+        for field in SELECTION_FIELDS:
             self.assertEqual(selected["selections"][field]["userQuote"], QUOTE)
             self.assertEqual(selected["selections"][field]["messageRef"], TAG)
         resumed = self.status(root)["productionSpecs"]
@@ -104,15 +107,16 @@ class ProductionSpecsTests(unittest.TestCase):
         self.assertIsNone(wf.read_json(root / ".drama/project-state.json")["totalEpisodes"])
         self.pack(root=root, succeeds=True)
 
-    def test_init_duration_without_selection_receipt_fails_before_creating_directory(self):
-        for index, args in enumerate((("--duration-seconds", "90"), ("--duration-range", "50-60"))):
+    def test_init_choices_without_selection_receipt_fail_before_creating_directory(self):
+        for index, args in enumerate((("--source-mode", "original"), ("--duration-seconds", "90"),
+                                      ("--duration-range", "50-60"))):
             with self.subTest(args=args):
                 root = self.base / f"unreceipted-init-{index}"
                 result = run("init_project.py", root, "--production-mode", "live_action", *args)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse(root.exists())
 
-    def test_state_validator_rejects_conflicting_mode_or_unplanned_total(self):
+    def test_state_validator_rejects_conflicting_mirrors_or_unplanned_total(self):
         # Genuine pending input is a warning; contradictory mirrors are errors.
         pending = run("validate_state.py", self.root, "--json")
         self.assertEqual(pending.returncode, 0, pending.stderr + pending.stdout)
@@ -125,7 +129,7 @@ class ProductionSpecsTests(unittest.TestCase):
         valid = run("validate_state.py", self.root, "--json")
         self.assertEqual(valid.returncode, 0, valid.stderr + valid.stdout)
         self.assertTrue(json.loads(valid.stdout)["warnings"])
-        for field, value in (("productionMode", "ai_drama"), ("totalEpisodes", 58)):
+        for field, value in (("productionMode", "ai_drama"), ("sourceMode", "adaptation"), ("totalEpisodes", 58)):
             with self.subTest(field=field):
                 wf.save_json(state_path, {**baseline, field: value})
                 result = run("validate_state.py", self.root, "--json")
@@ -135,12 +139,21 @@ class ProductionSpecsTests(unittest.TestCase):
                 self.assertTrue(report["errors"])
         wf.save_json(state_path, baseline)
         self.assertEqual(run("validate_state.py", self.root, "--json").returncode, 0)
+        source_path = self.root / wf.SOURCE
+        source = wf.read_json(source_path)
+        wf.save_json(source_path, {**source, "sourceMode": "adaptation"})
+        result = run("validate_state.py", self.root, "--json")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue(json.loads(result.stdout)["errors"])
 
     def test_stepwise_selection_is_required_before_treatment_and_plan_before_outline(self):
         self.assertEqual(self.status()["productionSpecs"]["nextRequired"], "productionMode")
         self.pack()
         self.select("--production-mode", "live_action")
         # Each status command starts a new process and must restore the pending choice.
+        self.assertEqual(self.status()["productionSpecs"]["nextRequired"], "sourceMode")
+        self.pack()
+        self.select("--source-mode", "original")
         self.assertEqual(self.status()["productionSpecs"]["nextRequired"], "duration")
         self.pack()
         self.select("--duration-seconds", "90")
@@ -158,28 +171,75 @@ class ProductionSpecsTests(unittest.TestCase):
         self.pack("outline", succeeds=True)
 
     def test_selections_cannot_be_supplied_out_of_order(self):
+        self.select("--source-mode", "original", succeeds=False)
         self.select("--duration-seconds", "90", succeeds=False)
         self.select("--episode-count", "60", succeeds=False)
         self.select("--production-mode", "live_action")
+        self.select("--duration-seconds", "90", succeeds=False)
         self.select("--episode-count", "60", succeeds=False)
+        self.assertEqual(self.status()["productionSpecs"]["nextRequired"], "sourceMode")
+        self.select("--source-mode", "original")
+        self.select("--episode-count", "60", succeeds=False)
+        self.assertEqual(self.status()["productionSpecs"]["nextRequired"], "duration")
         self.pack()
+
+    def test_invalid_source_is_rejected_and_does_not_advance_the_gate(self):
+        self.select("--production-mode", "live_action")
+        for source_mode in ("", "   ", "\t\n", "not-a-source-mode"):
+            with self.subTest(source_mode=source_mode):
+                self.select("--source-mode", source_mode, succeeds=False)
+                self.assertIsNone(self.specs()["sourceMode"])
+                self.assertEqual(self.status()["productionSpecs"]["nextRequired"], "sourceMode")
+                self.pack()
+
+    def test_legacy_missing_source_can_be_completed_without_reselecting_receipted_choices(self):
+        for variant in ("missing", "null", "unreceipted", "missing-quote"):
+            with self.subTest(variant=variant):
+                root = self.new_project("legacy-source-" + variant)
+                self.complete(root=root)
+                legacy = self.specs(root)
+                if variant == "missing-quote":
+                    legacy["selections"]["sourceMode"]["userQuote"] = ""
+                else:
+                    legacy["selections"].pop("sourceMode")
+                if variant == "missing":
+                    legacy.pop("sourceMode")
+                elif variant == "null":
+                    legacy["sourceMode"] = None
+                wf.save_json(root / ".drama/production-specs.json", legacy)
+                pending = self.status(root)["productionSpecs"]
+                self.assertEqual(pending["status"], "pending")
+                self.assertEqual(pending["nextRequired"], "sourceMode")
+                self.pack(root=root)
+                self.select("--source-mode", "original", root=root)
+                saved = self.specs(root)
+                self.assertEqual(saved["sourceMode"], "original")
+                self.assertEqual(saved["selections"]["sourceMode"]["userQuote"], QUOTE)
+                self.assertEqual(saved["selections"]["sourceMode"]["messageRef"], TAG)
+                for field in ("productionMode", "duration", "episodeCountPreference"):
+                    self.assertEqual(saved[field], legacy[field])
+                    self.assertEqual(saved["selections"][field], legacy["selections"][field])
+                resumed = self.status(root)["productionSpecs"]
+                self.assertEqual(resumed["status"], "ready")
+                self.assertEqual(resumed["nextRequired"], "episodePlan")
+                self.pack(root=root, succeeds=True)
 
     def test_quote_and_reference_are_required_and_failed_command_leaves_gate_closed(self):
         for evidence in ([], ["--message-ref", TAG], ["--user-quote", QUOTE],
                          ["--user-quote", "", "--message-ref", TAG],
                          ["--user-quote", QUOTE, "--message-ref", ""]):
             self.command("set-specs", "--production-mode", "live_action",
-                         "--duration-seconds", "90", "--episode-count", "60",
+                         "--source-mode", "original", "--duration-seconds", "90", "--episode-count", "60",
                          *evidence, succeeds=False)
             self.pack()
-        self.select("--production-mode", "live_action", "--duration-seconds", "90",
+        self.select("--production-mode", "live_action", "--source-mode", "original", "--duration-seconds", "90",
                     "--episode-count", "60")
         self.pack(succeeds=True)
 
     def test_persisted_selections_without_quote_never_become_ready(self):
         self.complete()
         original = self.specs()
-        for field in ("productionMode", "duration", "episodeCountPreference"):
+        for field in SELECTION_FIELDS:
             with self.subTest(field=field):
                 altered = json.loads(json.dumps(original))
                 altered["selections"][field]["userQuote"] = ""
@@ -190,7 +250,7 @@ class ProductionSpecsTests(unittest.TestCase):
         self.pack(succeeds=True)
 
     def test_live_action_duration_hard_limit_is_180_seconds(self):
-        self.select("--production-mode", "live_action", "--duration-seconds", "181",
+        self.select("--production-mode", "live_action", "--source-mode", "original", "--duration-seconds", "181",
                     "--episode-count", "60", succeeds=False)
         self.pack()
         self.complete(duration="180", count="60")
@@ -216,7 +276,7 @@ class ProductionSpecsTests(unittest.TestCase):
         for flag, value in (("--duration-seconds", "0"), ("--duration-seconds", "-1"),
                             ("--duration-range", "60-50"), ("--duration-range", "0-60")):
             with self.subTest(value=value):
-                self.select("--production-mode", "ai_drama", flag, value,
+                self.select("--production-mode", "ai_drama", "--source-mode", "original", flag, value,
                             "--episode-count", "60", succeeds=False)
                 self.pack()
 
@@ -245,7 +305,7 @@ class ProductionSpecsTests(unittest.TestCase):
     def test_invalid_episode_preferences_are_rejected(self):
         for preference in ("0", "-1", "60-40", "0-60"):
             with self.subTest(preference=preference):
-                self.select("--production-mode", "live_action", "--duration-seconds", "90",
+                self.select("--production-mode", "live_action", "--source-mode", "original", "--duration-seconds", "90",
                             "--episode-count", preference, succeeds=False)
                 self.pack()
 
@@ -263,6 +323,7 @@ class ProductionSpecsTests(unittest.TestCase):
     def test_mode_change_discards_previous_duration_and_requires_reselection(self):
         self.complete()
         self.plan(2)
+        prior = self.specs()
         canon = self.root / "continuity/canon.yaml"
         self.assertIn('  productionMode: "live_action"\n', canon.read_text(encoding="utf-8"))
         preserved = "immutable_facts:\n  - productionMode: software-fixture-immutable\n"
@@ -273,6 +334,8 @@ class ProductionSpecsTests(unittest.TestCase):
         self.assertNotIn('  productionMode: "live_action"\n', updated_canon)
         self.assertIn(preserved, updated_canon)
         self.assertEqual(wf.read_json(self.root / ".drama/project-state.json")["productionMode"], "ai_drama")
+        self.assertEqual(self.specs()["sourceMode"], prior["sourceMode"])
+        self.assertEqual(self.specs()["selections"]["sourceMode"], prior["selections"]["sourceMode"])
         self.assertIsNone(self.specs()["duration"])
         self.assertEqual(self.status()["productionSpecs"]["nextRequired"], "duration")
         self.pack()
@@ -289,17 +352,59 @@ class ProductionSpecsTests(unittest.TestCase):
         self.assertEqual(saved["plannedTotalEpisodes"], 38)
         self.assertEqual(saved["planReason"], reason)
 
+    def test_source_change_updates_mirrors_and_adds_route_skeleton_without_overwriting(self):
+        routes = {"market_research": ["02-market-research.md"],
+                  "adaptation": ["01-source-index.md", "02-source-truth.md", "03-adaptation-map.md"]}
+        for source_mode, files in routes.items():
+            with self.subTest(source_mode=source_mode):
+                root = self.new_project("switch-to-" + source_mode)
+                self.complete(root=root)
+                self.plan(2, root=root)
+                before = self.specs(root)
+                original_path = root / "03-original-discovery.md"
+                original_text = original_path.read_text(encoding="utf-8")
+                preserved = "# software-fixture\n\nPreserve this existing route document exactly.\n"
+                (root / files[0]).write_text(preserved, encoding="utf-8")
+                previous = wf.read_json(root / wf.SOURCE)
+                previous["creatorLocks"] = ["software-fixture: preserve creator constraints across source routes"]
+                wf.save_json(root / wf.SOURCE, previous)
+                source_before = (root / wf.SOURCE).read_bytes()
+                self.select("--source-mode", source_mode, root=root)
+                selected = self.specs(root)
+                self.assertEqual(selected["sourceMode"], source_mode)
+                self.assertEqual(selected["selections"]["sourceMode"]["userQuote"], QUOTE)
+                self.assertEqual(wf.read_json(root / ".drama/project-state.json")["sourceMode"], source_mode)
+                source_after = wf.read_json(root / wf.SOURCE)
+                self.assertEqual(source_after["sourceMode"], source_mode)
+                self.assertEqual(source_after["originalIdea"], "")
+                self.assertEqual(source_after["creatorLocks"], previous["creatorLocks"])
+                self.assertEqual(source_after["records"], [])
+                history = list((root / ".drama/source-route-history").glob("*.json"))
+                self.assertTrue(any(path.read_bytes() == source_before for path in history))
+                for filename in files:
+                    self.assertTrue((root / filename).is_file(), filename)
+                self.assertEqual((root / files[0]).read_text(encoding="utf-8"), preserved)
+                self.assertEqual(original_path.read_text(encoding="utf-8"), original_text)
+                for field in ("duration", "episodeCountPreference"):
+                    self.assertEqual(selected[field], before[field])
+                self.assertIsNone(wf.read_json(root / ".drama/episode-plan.json")["plannedTotalEpisodes"])
+
     def test_all_source_and_review_modes_still_require_selections(self):
         for source_mode in ("original", "adaptation", "market-research", "source-remix"):
             for review_mode in ("strict", "assisted", "automatic"):
                 with self.subTest(source_mode=source_mode, review_mode=review_mode):
                     root = self.new_project(f"{source_mode}-{review_mode}", source_mode, review_mode)
+                    self.assertEqual(self.status(root)["productionSpecs"]["nextRequired"], "productionMode")
                     result = self.pack(root=root)
                     self.assertFalse((root / ".drama/readings").exists(), result.stdout)
+                    self.select("--production-mode", "live_action", root=root)
+                    self.assertEqual(self.status(root)["productionSpecs"]["nextRequired"], "sourceMode")
+                    self.pack(root=root)
                     self.command("check-writing", root=root, succeeds=False)
 
     def test_production_choice_or_actual_plan_change_invalidates_old_confirmation(self):
         changes = (("type", ("--production-mode", "ai_drama")),
+                   ("source", ("--source-mode", "market_research")),
                    ("duration", ("--duration-seconds", "100")),
                    ("preference", ("--episode-count", "3")))
         for name, args in changes:

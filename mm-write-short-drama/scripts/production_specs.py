@@ -11,7 +11,10 @@ from pathlib import Path
 SPECS = ".drama/production-specs.json"
 PLAN = ".drama/episode-plan.json"
 MODES = ("live_action", "ai_drama")
-FIELDS = ("productionMode", "duration", "episodeCountPreference")
+SOURCE_MODES = {"original": "自己编写", "adaptation": "已有素材改编",
+                "market_research": "检索近期热门剧本后改编/再创作",
+                "source_remix": "旧素材再创作（兼容）"}
+FIELDS = ("productionMode", "sourceMode", "duration", "episodeCountPreference")
 
 
 def profiles() -> dict:
@@ -34,8 +37,15 @@ def save_json(path: Path, value: dict) -> None:
 
 def empty_specs() -> dict:
     return {"schemaVersion": "1.0.0", "policyVersion": profiles()["policyVersion"],
-            "productionMode": None, "duration": None, "episodeCountPreference": None,
+            "productionMode": None, "sourceMode": None, "duration": None, "episodeCountPreference": None,
             "selections": {}}
+
+
+def empty_source(mode: str) -> dict:
+    return {"schemaVersion": "1.0.0", "sourceMode": mode,
+            "originalIdea": "", "creatorLocks": [], "authorizationStatus": "unknown",
+            "queryDate": "", "windowDays": 30, "platform": "", "region": "", "genre": "",
+            "records": [], "sourceGaps": [], "originalityDecisions": []}
 
 
 def empty_plan() -> dict:
@@ -93,6 +103,8 @@ def structure_errors(specs: dict) -> list[str]:
     mode = specs.get("productionMode")
     if mode is not None and mode not in MODES:
         errors.append("productionMode must be live_action or ai_drama")
+    if specs.get("sourceMode") is not None and specs["sourceMode"] not in tuple(SOURCE_MODES):
+        errors.append("sourceMode must be a supported creation source")
     selections = specs.get("selections")
     if not isinstance(selections, dict):
         return errors + ["production specs selections must be an object"]
@@ -140,7 +152,8 @@ def selection_errors(root: Path, require_plan: bool = False) -> list[str]:
     try:
         specs = read_json(root / SPECS)
         errors = structure_errors(specs)
-        labels = {"productionMode": "制作方式（真人短剧或AI剧）", "duration": "单集时长", "episodeCountPreference": "期望集数（具体数或范围，可浮动）"}
+        labels = {"productionMode": "制作方式（AI剧或真人短剧）", "sourceMode": "创作来源（自己编写、已有素材改编、检索近期热门剧本后改编）",
+                  "duration": "单集时长", "episodeCountPreference": "期望集数（具体数或范围，可浮动）"}
         for field in FIELDS:
             if not has_selection(specs, field):
                 errors.append(f"production specs awaiting user selection: {labels[field]}")
@@ -148,6 +161,10 @@ def selection_errors(root: Path, require_plan: bool = False) -> list[str]:
         state = read_json(root / ".drama/project-state.json")
         if specs.get("productionMode") and state.get("productionMode") != specs["productionMode"]:
             errors.append("project productionMode differs from user selection")
+        if specs.get("sourceMode") and state.get("sourceMode") != specs["sourceMode"]:
+            errors.append("project sourceMode differs from user selection")
+        if specs.get("sourceMode") and read_json(root / "source-evidence.json").get("sourceMode") != specs["sourceMode"]:
+            errors.append("source evidence route differs from user selection")
         if require_plan:
             plan = read_json(root / PLAN)
             errors += plan_errors(root, plan, state)
@@ -189,22 +206,24 @@ def readiness(root: Path) -> dict:
         return {"status": "pending" if missing or errors else "ready", "nextRequired": next_required,
                 **{f: specs.get(f) for f in FIELDS}, "plannedTotalEpisodes": plan.get("plannedTotalEpisodes"),
                 "planReason": plan.get("planReason"), "advisories": advisory, "errors": errors,
-                "profiles": profiles()["profiles"]}
+                "profiles": profiles()["profiles"], "sourceOptions": {k: v for k, v in SOURCE_MODES.items() if k != "source_remix"}}
     except (OSError, ValueError, KeyError, TypeError) as exc:
         return {"status": "pending", "nextRequired": "productionMode", "errors": [str(exc)],
-                "profiles": profiles()["profiles"], "advisories": []}
+                "profiles": profiles()["profiles"], "sourceOptions": {k: v for k, v in SOURCE_MODES.items() if k != "source_remix"}, "advisories": []}
 
 
 def apply_choices(specs: dict, *, production_mode: str | None = None,
+                  source_mode: str | None = None,
                   duration_seconds: int | None = None, duration_range: str | None = None,
                   episode_count: str | None = None, user_quote: str, message_ref: str) -> dict:
     if not user_quote.strip() or not message_ref.strip():
         raise ValueError("production choices need the actual user quote and message reference")
-    if all(v is None for v in (production_mode, duration_seconds, duration_range, episode_count)):
+    if all(v is None for v in (production_mode, source_mode, duration_seconds, duration_range, episode_count)):
         raise ValueError("supply at least one production choice")
     result = copy.deepcopy(specs)
-    if structure_errors(result):
-        raise ValueError("invalid existing production specs; repair or explicitly migrate before selecting")
+    result.setdefault("sourceMode", None)
+    if not isinstance(result.get("selections"), dict):
+        raise ValueError("invalid existing selection receipt container; explicitly migrate before selecting")
     values = {}
     if production_mode is not None:
         if production_mode not in MODES:
@@ -215,21 +234,83 @@ def apply_choices(specs: dict, *, production_mode: str | None = None,
             # An existing count preference remains a preference when changing format.
         values["productionMode"] = production_mode
         result["productionMode"] = production_mode
+    if source_mode is not None:
+        if result.get("productionMode") not in MODES:
+            raise ValueError("choose production mode before creation source")
+        if source_mode not in SOURCE_MODES:
+            raise ValueError("choose original, adaptation or market_research")
+        values["sourceMode"] = source_mode
+        result["sourceMode"] = source_mode
     if duration_seconds is not None or duration_range is not None:
         if result.get("productionMode") not in MODES:
             raise ValueError("choose production mode before duration")
+        if result.get("sourceMode") not in tuple(SOURCE_MODES):
+            raise ValueError("choose creation source before duration")
         values["duration"] = duration_value(result["productionMode"], duration_seconds, duration_range)
         result["duration"] = values["duration"]
     if episode_count is not None:
-        if result.get("duration") is None:
-            raise ValueError("choose duration before episode count")
+        if result.get("sourceMode") not in tuple(SOURCE_MODES) or result.get("duration") is None:
+            raise ValueError("choose creation source and duration before episode count")
         values["episodeCountPreference"] = parse_episode_count(episode_count)
     at = datetime.now(timezone.utc).isoformat()
     for field, value in values.items():
         result[field] = value
         result["selections"][field] = {"value": value, "userQuote": user_quote,
                                        "messageRef": message_ref, "selectedAt": at}
+    errors = structure_errors(result)
+    if errors:
+        raise ValueError("invalid production specs: " + "; ".join(errors))
     return result
+
+
+def prepare_source_route(root: Path, mode: str) -> None:
+    """Select a source route without overwriting the creator's existing prose."""
+    from init_project import artifact_specs
+    state_path, index_path = root / ".drama/project-state.json", root / ".drama/artifact-index.json"
+    state, index = read_json(state_path), read_json(index_path)
+    source = root / "source-evidence.json"
+    existing = read_json(source) if source.is_file() else None
+    if existing is None or existing.get("sourceMode") != mode:
+        if existing is not None:
+            sha = hashlib.sha256(source.read_bytes()).hexdigest()
+            archive = root / ".drama/source-route-history" / (sha + ".json")
+            if not archive.exists():
+                archive.parent.mkdir(parents=True, exist_ok=True)
+                archive.write_bytes(source.read_bytes())
+        fresh = empty_source(mode)
+        if existing is not None:
+            # A different material source does not revoke the creator's locks.
+            fresh["creatorLocks"] = existing.get("creatorLocks", [])
+        save_json(source, fresh)
+    through = "full" if "seasonArchitecture" in index["artifacts"] else ("story-bible" if "storyTreatment" in index["artifacts"] else "brief")
+    assets = Path(__file__).resolve().parent.parent / "assets"
+    if through != "brief":
+        files = ({"03-original-discovery.md": "original-discovery-template.md"}
+                 if mode in {"original", "market_research"} else {
+                     "02-source-truth.md": "source-truth-template.md",
+                     "03-adaptation-map.md": "adaptation-map-template.md"})
+        for name, template in files.items():
+            path = root / name
+            if not path.exists():
+                path.write_bytes((assets / template).read_bytes())
+        placeholders = ({"02-market-research.md": "# 近期热门材料与改编取舍\n\n"}
+                        if mode == "market_research" else {"01-source-index.md": "# 原著索引\n\n"}
+                        if mode in {"adaptation", "source_remix"} else {})
+        for name, content in placeholders.items():
+            if not (root / name).exists():
+                (root / name).write_text(content, encoding="utf-8")
+    for key, spec in artifact_specs(mode, through).items():
+        if key not in index["artifacts"]:
+            index["artifacts"][key] = {**spec, "revision": 1, "status": "draft",
+                                      "validators": ["validate_project.py"], "contentHash": None}
+        else:
+            index["artifacts"][key]["dependsOn"] = spec["dependsOn"]
+        item = index["artifacts"][key]
+        state["artifacts"][key] = {f: item[f] for f in ("path", "revision", "status", "dependsOn")}
+    state["sourceMode"] = mode
+    state["projectRevision"] = index["projectRevision"] = max(state["projectRevision"], index["projectRevision"]) + 1
+    save_json(state_path, state)
+    save_json(index_path, index)
 
 
 def set_specs(root: Path, **choices) -> dict:
@@ -241,6 +322,8 @@ def set_specs(root: Path, **choices) -> dict:
     save_json(path, updated)
     save_json(root / PLAN, empty_plan())
     save_json(root / ".drama/project-state.json", state)
+    if updated.get("sourceMode") is not None:
+        prepare_source_route(root, updated["sourceMode"])
     # Keep the skeleton's duplicate routing field consistent, without parsing or
     # rewriting the creator's immutable facts elsewhere in the YAML document.
     canon = root / "continuity/canon.yaml"
@@ -255,8 +338,9 @@ def set_specs(root: Path, **choices) -> dict:
                 break
             if in_project and line.startswith("  productionMode:"):
                 lines[number] = "  productionMode: " + json.dumps(state["productionMode"]) + "\n"
-                canon.write_text("".join(lines), encoding="utf-8")
-                break
+            if in_project and line.startswith("  sourceMode:") and updated.get("sourceMode") is not None:
+                lines[number] = "  sourceMode: " + json.dumps(updated["sourceMode"]) + "\n"
+        canon.write_text("".join(lines), encoding="utf-8")
     return readiness(root)
 
 

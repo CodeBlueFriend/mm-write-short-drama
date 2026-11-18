@@ -13,7 +13,7 @@ def run(name, *args):
 def seed(root, mode="original", review_mode="strict"):
     result = run("init_project.py", root, "--mode", mode, "--review-mode", review_mode, "--total-episodes", 2)
     assert result.returncode == 0, result.stderr
-    choose_specs(root, 2)
+    choose_specs(root, 2, source_mode=mode.replace("-", "_"))
     source = wf.read_json(root / wf.SOURCE)
     source["originalIdea"] = "修伞人要退还借走的旧伞，修复遗物的代价是错过有酬订单。"
     wf.save_json(root / wf.SOURCE, source)
@@ -24,10 +24,11 @@ def seed(root, mode="original", review_mode="strict"):
     (root / "front-matter.md").write_text("# 合成验收夹具\n\n已写内容和范围，供程序测试，不代表用户确认。\n", encoding="utf-8")
 
 
-def choose_specs(root, total=2, *, episode_count=None):
+def choose_specs(root, total=2, *, episode_count=None, source_mode="original"):
     """Declare software inputs without representing them as creator approval."""
     result = run("workflow.py", root, "set-specs", "--production-mode", "live_action",
-                 "--duration-seconds", 90, "--episode-count", episode_count or str(total),
+                 "--source-mode", source_mode, "--duration-seconds", 90,
+                 "--episode-count", episode_count or str(total),
                  "--user-quote", "software-fixture: synthetic selection for software regression; not real user approval",
                  "--message-ref", "software-fixture")
     assert result.returncode == 0, result.stderr

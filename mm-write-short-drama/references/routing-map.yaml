@@ -1,11 +1,11 @@
 schemaVersion: "1.0.0"
 source_modes:
   original:
-    label: 原创
+    label: 自己编写（原创）
     required_references: [workflow.md, original-creation.md]
     required_artifacts: [00-project-brief.md, 03-original-discovery.md, 04-story-bible.md]
   adaptation:
-    label: 改编
+    label: 已有素材改编
     required_references: [workflow.md, adaptation.md]
     required_artifacts: [00-project-brief.md, 01-source-index.md, 02-source-truth.md, 03-adaptation-map.md, 04-story-bible.md]
   source_remix:
@@ -13,12 +13,14 @@ source_modes:
     required_references: [workflow.md, adaptation.md]
     required_artifacts: [00-project-brief.md, 01-source-index.md, 02-source-truth.md, 03-adaptation-map.md, 04-story-bible.md]
   market_research:
-    label: 检索近期爆款后创作
-    required_references: [workflow.md, source-intake.md, original-creation.md]
+    label: 检索近期热门剧本后改编/再创作
+    required_references: [workflow.md, source-intake.md, adaptation.md, original-creation.md]
     required_artifacts: [00-project-brief.md, source-evidence.json, 02-market-research.md, 03-story-treatment.md, 04-story-bible.md]
 production_spec_intake:
-  selection_order: [production_mode, episode_duration, expected_episode_count]
+  selection_order: [production_mode, source_mode, episode_duration, expected_episode_count]
+  ordinary_requirements_after_source: [genre, audience, orientation]
   new_project_modes: [live_action, ai_drama]
+  new_project_sources: [original, adaptation, market_research]
   storage: .drama/production-specs.json
   pending_stage: awaiting_production_specs
   evidence: [user_quote, message_ref]

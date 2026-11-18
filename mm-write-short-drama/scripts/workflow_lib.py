@@ -170,7 +170,7 @@ def source_errors(root: Path) -> list[str]:
                         if not record.get(key):
                             errors.append(f"market record missing {key}")
                 if not source.get("originalityDecisions"):
-                    errors.append("market research needs new goals, causal order and ending with differences from references")
+                    errors.append("market research needs recorded adaptation choices and differences from references")
         return errors
     except (OSError, ValueError, KeyError) as exc:
         return [f"invalid source evidence: {exc}"]

@@ -9,7 +9,7 @@ import json
 import shutil
 from pathlib import Path
 
-from production_specs import PLAN, SPECS, apply_choices, empty_plan, empty_specs
+from production_specs import PLAN, SPECS, SOURCE_MODES, apply_choices, empty_plan, empty_specs, empty_source
 
 
 CSV_HEADERS = {
@@ -73,6 +73,7 @@ def main() -> int:
     parser.add_argument("project_dir", type=Path, help="New or empty project directory")
     parser.add_argument("--mode", choices=("original", "adaptation", "market-research", "source-remix"), default="original", help="Three new-project routes; source-remix retains the legacy material route")
     parser.add_argument("--production-mode", choices=("live_action", "ai_drama", "hybrid", "unspecified"), default="unspecified")
+    parser.add_argument("--source-mode", choices=tuple(SOURCE_MODES), help="Actual creator source choice, after production mode; requires selection receipts")
     parser.add_argument("--orientation", choices=("vertical", "horizontal", "custom"), default="vertical")
     parser.add_argument("--delivery-scope", choices=("diagnosis", "outline", "episodes", "screenplay", "review", "revision", "knowledge", "unspecified"), default="unspecified")
     parser.add_argument("--review-mode", choices=("strict", "assisted", "automatic"), default="strict")
@@ -102,14 +103,16 @@ def main() -> int:
         try:
             production = apply_choices(production,
                 production_mode=args.production_mode if args.production_mode != "unspecified" else None,
+                source_mode=args.source_mode,
                 duration_seconds=args.duration_seconds, duration_range=args.duration_range,
                 episode_count=args.episode_count, user_quote=args.specs_user_quote or "",
                 message_ref=args.specs_message_ref or "")
         except ValueError as exc:
             parser.error(str(exc))
-    elif any(v is not None for v in (args.duration_seconds, args.duration_range, args.episode_count)):
+    elif any(v is not None for v in (args.source_mode, args.duration_seconds, args.duration_range, args.episode_count)):
         parser.error("production choices require --specs-user-quote and --specs-message-ref")
     selected_mode = production["productionMode"] or "unspecified"
+    source_mode = production["sourceMode"] or source_mode
 
     root = args.project_dir.expanduser().resolve()
     if root.exists() and any(root.iterdir()):
@@ -131,16 +134,11 @@ def main() -> int:
     for source_name, target_name in copies.items():
         shutil.copyfile(assets / source_name, root / target_name)
 
-    write_json(root / "source-evidence.json", {
-        "schemaVersion": "1.0.0", "sourceMode": source_mode,
-        "originalIdea": "", "creatorLocks": [], "authorizationStatus": "unknown",
-        "queryDate": "", "windowDays": 30, "platform": "", "region": "", "genre": "",
-        "records": [], "sourceGaps": [], "originalityDecisions": [],
-    })
+    write_json(root / "source-evidence.json", empty_source(source_mode))
     if args.through in {"story-bible", "full"}:
         write_new(root / "03-story-treatment.md", "# 完整故事底稿\n\n<!-- 用连续自然语言写到结局，先审读因果和动机，再展开大纲。 -->\n")
         if source_mode == "market_research":
-            write_new(root / "02-market-research.md", "# 近期参考与原创取舍\n\n<!-- 记录实际查询日期、来源类型、热度口径、缺口及新人物目标/因果/结局。 -->\n")
+            write_new(root / "02-market-research.md", "# 近期热门材料与改编取舍\n\n<!-- 记录实际查询日期、来源类型、热度口径、缺口、可用原文及实际改编/再创作取舍；用户要求原创参考时保留原创边界。 -->\n")
 
     if source_mode in {"adaptation", "source_remix"} and args.through in {"story-bible", "full"}:
         write_new(root / "01-source-index.md", "# 原著索引\n\n")
@@ -186,7 +184,7 @@ def main() -> int:
     write_json(root / PLAN, empty_plan())
     write_new(root / ".drama" / "invalidation-log.jsonl", "")
     write_json(root / ".drama/workflow.json", {
-        "schemaVersion": "1.0.0", "phase": "awaiting_production_specs" if any(production[f] is None for f in ("productionMode", "duration", "episodeCountPreference")) else "source", "reviews": [],
+        "schemaVersion": "1.0.0", "phase": "awaiting_production_specs" if any(production[f] is None for f in ("productionMode", "sourceMode", "duration", "episodeCountPreference")) else "source", "reviews": [],
         "outlineConfirmation": None, "confirmationHistory": [], "events": [],
     })
     write_json(root / ".humanizer" / "policy.json", {

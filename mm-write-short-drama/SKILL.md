@@ -10,15 +10,15 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 ## 启动任务
 
 1. 检查工作区是否已有短剧项目文件。续作时先读取 `.drama/project-state.json`、`.drama/artifact-index.json`、`00-project-brief.md`、`locked-decisions.md`、当前任务依赖的上游产物、相关连续性账本和最新变更记录，不凭聊天记忆续写。缺少新版状态文件的旧项目可继续只读处理；整季续作前先说明并迁移，不猜测状态。只改用户提供的局部文本时，从稿件摘取必要事实并限定范围，不以全项目迁移阻塞改稿。
-2. 新项目先按顺序取得用户的三项选择：真人或 AI → 单集时长 → 期望集数（具体数或范围，允许按故事合理浮动）。用户已明确的选择直接记录，不重复问；未齐前只建空骨架/启动单、保存原始素材，不构思故事底稿、大纲或分集，绝不默认真人6集。按 [production-modes.md](references/production-modes.md) 展示本次固定时长策略，不为此上网查平台规范。
-3. 用 `scripts/init_project.py` 创建所需骨架；`--through brief|story-bible` 限定本轮范围。用 `workflow.py PROJECT set-specs` 分步保存真实原话与消息定位，齐全前保持 `awaiting_production_specs`；新增时长/集数初始化参数必须配真实回执；旧制作方式/总数参数单独出现只作待核候选。期望集数存 `.drama/production-specs.json`，实际规划总数用 `set-plan --total-episodes N --reason ...` 另存 `.drama/episode-plan.json`，`state.totalEpisodes` 镜像实际数，不冒填为同一个字段。再填写来源、屏幕、交付与协作路由，机器值见 [routing-map.yaml](references/routing-map.yaml)。改编项记录素材位置、来源和用户授权声明，不代替法律判断。
-4. 只追问会改变结果的关键缺口，一次最多三项。其余标记为“待定”，不得偷偷固化。
+2. 新项目按顺序推进：AI或真人 → 创作来源 → 题材等需求 → 单集时长 → 期望集数（具体数或范围，允许按故事合理浮动）。用户已明确的选择直接记录，不重复问；制作方式未选时首问必须是AI或真人，选完立即问创作来源，不能先问来源或题材；未齐前只建空骨架/启动单、保存原始素材，不构思故事底稿、大纲或分集，绝不默认真人6集。按 [production-modes.md](references/production-modes.md) 展示本次固定时长策略，不为此上网查平台规范。
+3. 用 `scripts/init_project.py` 创建所需骨架；`--through brief|story-bible` 限定本轮范围。用 `workflow.py PROJECT set-specs` 分步保存真实原话与消息定位；来源用 `--source-mode original|adaptation|market_research`（`source_remix`仅兼容旧项目），`init --mode`仅决定骨架、不算来源选择。选定来源时补齐相应空骨架与索引依赖，不覆盖已有正文；切换明确来源时原字节归档旧来源证据，再重置新路由证据，详见 [source-intake.md](references/source-intake.md)。齐全前保持 `awaiting_production_specs`；新增来源/时长/集数初始化参数必须配真实回执；旧制作方式/总数参数单独出现只作待核候选。期望集数存 `.drama/production-specs.json`，实际规划总数用 `set-plan --total-episodes N --reason ...` 另存 `.drama/episode-plan.json`，`state.totalEpisodes` 镜像实际数，不冒填为同一个字段。来源后了解题材、屏幕、交付与协作等普通需求，再选时长和期望集数；题材等普通需求可先标待定。机器值与加载规则见 [routing-map.yaml](references/routing-map.yaml)。改编项记录素材位置、来源和用户授权声明，不代替法律判断。
+4. 启动选择按当前等待点逐项提问；其他只追问会改变结果的关键缺口，一次最多三项。其余标记为“待定”，不得偷偷固化。
 5. 按当前阶段读取资源，不要一次加载全部参考资料或全部原著。
 6. 优先读取项目启动单中的“个人知识库路径”，否则从当前工作区向上查找 `knowledge-base/`；找到后按 [knowledge-base.md](references/knowledge-base.md) 检索，找不到则继续使用 Skill 内置规则并说明本轮未加载个人知识库。
 
 ## 选择路线与资源
 
-- 所有项目：读取 [workflow.md](references/workflow.md)。新项目先读 [制作方式与规格](references/production-modes.md)，规格齐全后再读 [三来源与故事底稿](references/source-intake.md)；恢复先运行 `scripts/workflow.py PROJECT status`，显示制作方式、时长或集数中的当前等待点。
+- 所有项目：读取 [workflow.md](references/workflow.md)。新项目先读 [制作方式与规格](references/production-modes.md)，规格齐全后再读 [创作来源与故事底稿](references/source-intake.md)；恢复先运行 `scripts/workflow.py PROJECT status`，显示制作方式、创作来源、时长或集数中的当前等待点。
 - 状态恢复、单集迁移、上游修改或失效传播：读取 [project-state.md](references/project-state.md)。
 - 原创发现：再读取 [original-creation.md](references/original-creation.md)。
 - 小说或素材改编：再读取 [adaptation.md](references/adaptation.md)；先运行 `scripts/index_source.py` 建索引。
@@ -51,8 +51,8 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 按以下顺序推进；若用户只请求某一阶段，仍先验证它依赖的上游文件：
 
-1. 输出并保存项目启动单与规格回执，恢复当前等待点；制作方式、单集时长和期望集数是新项目起草的前置阻断项。三项未齐不得运行 treatment/outline 审读或写分集、正文。其他非阻断选择可作为 L2/待确认草案写到用户指定阶段；完成与否以文件、状态和校验结果为准。
-2. 根据三种来源读取原著/原始创意/实际近期检索证据，保存 `source-evidence.json`；旧素材来源标记保留。三路均先完成 `03-story-treatment.md`，实际读完底稿、审因果动机与来源，修好再过 `workflow.py ... --stage treatment`。
+1. 输出并保存项目启动单与规格回执，恢复当前等待点；制作方式、创作来源、单集时长和期望集数是新项目起草的前置阻断项。四项未齐不得运行 treatment/outline 审读或写分集、正文。其他非阻断选择可作为 L2/待确认草案写到用户指定阶段；完成与否以文件、状态和校验结果为准。
+2. 按已选来源读取已有素材/原始创意/实际近期热门剧本检索证据，保存 `source-evidence.json`；旧素材来源标记保留。三路均先完成 `03-story-treatment.md`，实际读完底稿、审因果动机与来源，修好再过 `workflow.py ... --stage treatment`。
 3. 建立故事圣经。主角、核心关系、主要对手、世界规则、结局和主题立场须通过审核门 A。
 4. 建立能独立判断的大纲 `05-season-architecture.md`，包含连贯梗概、人物变化、阶段因果、高潮结局、伏笔兑现位置、用户期望集数和实际规划总数。实际数偏离期望具体数或范围时说明剧情理由，不设固定±10%；用 `set-plan` 保存实际数，随大纲一并交用户判断。独立通读并通过 `workflow.py ... --stage outline` 后呈用户。严格/辅助/自动模式均等待用户明确确认此版本，记录真实原话、消息定位、时间、范围和内容摘要。运行 `confirm-outline` 保存该决定；没有用户确认不得进入分集/场次/正文。主角目标、核心冲突、重大转折或结局变动，旧确认及关联稿失效，重审后再次确认。
 5. 建立分集矩阵；先审核首批分集再扩展整季，通过审核门 C。

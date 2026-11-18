@@ -93,6 +93,10 @@ def validate(root: Path) -> tuple[list[str], list[str]]:
         errors += structure_errors(production)
         if production.get("productionMode") is not None and state.get("productionMode") != production["productionMode"]:
             errors.append("project productionMode differs from user selection")
+        if production.get("sourceMode") is not None and state.get("sourceMode") != production["sourceMode"]:
+            errors.append("project sourceMode differs from user selection")
+        if production.get("sourceMode") is not None and load_json(root / "source-evidence.json", errors).get("sourceMode") != production["sourceMode"]:
+            errors.append("source evidence route differs from user selection")
         pending = readiness(root)
         if pending["status"] != "ready":
             warnings.append("production choices pending; next: " + str(pending["nextRequired"]))

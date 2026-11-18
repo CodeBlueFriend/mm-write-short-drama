@@ -2,7 +2,7 @@
 
 ## 规格与实际规划
 
-制作方式、单集时长与期望集数须先有真实用户选择。期望具体数/范围保存在 `.drama/production-specs.json`；大纲实际总数与理由保存于 `.drama/episode-plan.json`（`plannedTotalEpisodes/planReason`），`state.totalEpisodes` 镜像实际数，不得把期望直接冒填成完成规划。根据完整故事决定实际数，用下列命令记录，`--reason` 写真实剧情理由：
+制作方式、创作来源、单集时长与期望集数须先有真实用户选择。题材等普通需求可先标待定。所选创作来源与期望具体数/范围保存在 `.drama/production-specs.json`；大纲实际总数与理由保存于 `.drama/episode-plan.json`（`plannedTotalEpisodes/planReason`），`state.totalEpisodes` 镜像实际数，不得把期望直接冒填成完成规划。根据完整故事决定实际数，用下列命令记录，`--reason` 写真实剧情理由：
 
 ```bash
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-plan \

@@ -1,34 +1,36 @@
 # mm-write-short-drama（短剧编剧 Codex Skill）
 
-先由用户选择真人或AI、单集时长和期望集数，再从小说、创意或近期市场参考开始，把故事讲到结局，审过底稿和大纲，等创作者明确确认这一版，再分批写成可表演的短剧。每批交付一个含完整项目介绍的 Word；正文审读、事实复核和导出实物验收都对应实际文件版本。
+新项目第一步由用户选择AI或真人，选完立即选择创作来源，再了解题材等需求、选择单集时长和期望集数，随后把故事讲到结局，审过底稿和大纲，等创作者明确确认这一版，再分批写成可表演的短剧。每批交付一个含完整项目介绍的 Word；正文审读、事实复核和导出实物验收都对应实际文件版本。
 
 当前开发版保留 v1.1 个人知识库、故事圣经、分集矩阵、场次卡与连续性账本，新增三来源入口、大纲确认、两遍审读、五书24项方法摘要及正式交付门。它负责剧本，不负责分镜、生图、视频生成、剪辑或发布。
 
 ## 从哪里开始
 
-新项目先按“真人或AI → 单集时长 → 期望集数”取得真实选择；用户已经说清的项直接记录，不重复问。集数可为具体数或范围，允许按完整故事合理浮动；未齐时只建空骨架/启动单并保存原始素材，不默认真人6集，也不构思底稿或大纲。规格齐全后三种来源共用“故事底稿→底稿审读→大纲→大纲审读→用户确认”；已说明来源直接选中。
+新项目先按“AI或真人 → 创作来源 → 题材等需求 → 单集时长 → 期望集数”取得真实选择；用户已经说清的项直接记录，不重复问；制作方式未选时首问必须是AI或真人，不能先问来源或题材。题材等普通需求可先标待定。集数可为具体数或范围，允许按完整故事合理浮动；未齐时只建空骨架/启动单并保存原始素材，不默认真人6集，也不构思底稿或大纲。四项规格（制作方式、来源、时长、期望集数）齐全后三种来源共用“故事底稿→底稿审读→大纲→大纲审读→用户确认”；已说明来源直接选中。
 
 本次固定策略：真人推荐90秒，常见60—180秒、爆款常规80—120秒，新项目硬上限180秒；旧有更长存量不作新项目默认。AI主流50—60秒、90秒可选，超过120秒少见；用户明确自定义可以保留并标非常规。这是用户指定的项目策略，不是新查到的平台规定。
 
 | 来源 | 普通指令示例 | 在开始写正文前交付 |
 |---|---|---|
-| 小说改编 | `把我提供的小说前五章改成真人短剧，每集90秒，期望6集，先给大纲。` | 原著版本、章节定位、可用范围和授权状态，改编取舍与从开头讲到结局的故事底稿；未提供后续注明拟改编。 |
-| 自主创意 | `一个替人道歉的代理人，被迫替失踪十年的父亲向全城人道歉。做AI短剧，每集50—60秒，期望40—60集。` | 保留原始创意与锁定项，补足人物当下必须做的事、失败、取舍和结果，审后给大纲。 |
-| 检索近期爆款后创作 | `做真人短剧，每集90秒，期望60集；参考近30天国内平台家庭关系短剧，先查材料再构思。` | 检索日期、窗口、平台地区、榜期与指标、链接和实际读到的内容层级，参考差异表与新故事。只有宣发就按宣发分析，热度不能核实就标待核。 |
+| 自己编写（自主创意） | `做AI短剧，选择自己编写；每集50—60秒，期望40—60集。创意：替人道歉的代理人，被迫替失踪十年的父亲向全城人道歉。` | 保留原始创意与锁定项，补足人物当下必须做的事、失败、取舍和结果，审后给大纲。 |
+| 已有素材改编（含小说） | `做真人短剧，选择已有素材改编；题材为都市情感，每集90秒，期望6集，改编我提供的小说前五章，先给大纲。` | 原著版本、章节定位、可用范围和授权状态，改编取舍与从开头讲到结局的故事底稿；未提供后续注明拟改编。 |
+| 检索近期热门剧本后改编/再创作 | `做真人短剧，选择检索近期热门剧本后改编/再创作；题材家庭关系，每集90秒，期望60集，先查可见材料。` | 检索日期、窗口、平台地区、榜期与指标、链接和实际读到的内容层级，来源类型、授权状态、差异表与改编/再创作方案。只有宣发就按宣发分析，热度不能核实就标待核。 |
 
 ```mermaid
 flowchart TD
-    P{"用户选择真人或AI"} --> T{"用户选择单集时长"}
+    P{"第一步：用户选择AI或真人"} --> S{"立即选择创作来源"}
+    S --> A["自己编写"]
+    S --> B["已有素材改编"]
+    S --> C["检索近期热门剧本后改编/再创作"]
+    A --> R["了解题材等普通需求，可待定"]
+    B --> R
+    C --> R
+    R --> T{"用户选择单集时长"}
     T --> N{"用户输入期望集数或范围"}
-    N --> Q{"三项真实选择齐全"}
-    Q -->|缺项| W["等待对应规格，不起草"]
+    N --> Q{"四项真实选择齐全"}
+    Q -->|缺项| W["等待对应项，不起草"]
     W --> Q
-    Q -->|齐全| S{"选择创作来源"} --> A["小说改编"]
-    S --> B["自主创意"]
-    S --> C["检索近期爆款"]
-    A --> D["用梗概方法写故事底稿"]
-    B --> D
-    C --> D
+    Q -->|齐全| D["按来源写故事底稿"]
     D --> E{"底稿通读"}
     E -->|退修| D
     E -->|通过| F["用进展纠葛与人物抉择构建大纲"]
@@ -47,7 +49,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["规格齐全且已确认含实际集数的大纲"] --> B["分集承接与场景转折分析"]
+    A["四项规格齐全且已确认含实际集数的大纲"] --> B["分集承接与场景转折分析"]
     B --> C["按人物意图写动作和对白"]
     C --> D{"批次审稿"}
     D -->|返修| B
@@ -101,15 +103,15 @@ cp -R ./mm-write-short-drama/. "$SKILLS_DIR/mm-write-short-drama/"
 ## 常见请求
 
 ```text
-$mm-write-short-drama 根据我的创意建立真人都市情感短剧，每集90秒，期望60集；先讲通完整故事，审后给大纲，等我确认再写。
+$mm-write-short-drama 做真人短剧，选择自己编写；题材都市情感，每集90秒，期望60集。根据我的创意先讲通完整故事，审后给大纲，等我确认再写。
 ```
 
 ```text
-$mm-write-short-drama 把我提供的novel.md前五章改为AI短剧，每集50—60秒，期望40—60集；标原著定位和改编决定，未提供后续写成候选方案。
+$mm-write-short-drama 做AI短剧，选择已有素材改编；每集50—60秒，期望40—60集。改编novel.md前五章，标原著定位和改编决定，未提供后续写成候选方案。
 ```
 
 ```text
-$mm-write-short-drama 做真人短剧，每集90秒，期望60集；检索近30天家庭关系短剧，写清日期、平台、证据层级和热度待核项，再设计新故事。
+$mm-write-short-drama 做真人短剧，选择检索近期热门剧本后改编/再创作；题材家庭关系，每集90秒，期望60集。检索近30天可见材料，写清日期、平台、证据层级、热度待核项和改编取舍。
 ```
 
 ```text
@@ -240,6 +242,7 @@ project-name/
 │   ├── project-state.json
 │   ├── production-specs.json   # 用户期望规格及真实选择回执
 │   ├── episode-plan.json       # 大纲实际总数和规划理由
+│   ├── source-route-history/   # 切换来源前的原始证据归档
 │   ├── artifact-index.json
 │   ├── workflow.json
 │   ├── invalidation-log.jsonl
@@ -269,7 +272,7 @@ project-name/
 
 ## 命令行工作流
 
-脚本负责证据、覆盖、版本、状态和文件检查，语义与创作判断由实际读稿的编剧/审核者完成。命令帮助以当前源码 `--help` 为准。
+脚本负责证据、覆盖、版本、状态和文件检查，语义与创作判断由实际读稿的编剧/审核者完成。命令帮助以当前源码 `--help` 为准。可以先建空骨架，但首个用户选择仍是AI/真人。`init --mode` 只决定骨架，不能当作用户已选来源；用 `set-specs --source-mode` 记录来源回执后，程序按来源补齐空骨架，不覆盖已有正文。切换明确来源时，旧 `source-evidence.json` 按原字节归档至 `.drama/source-route-history/<sha>.json`，新路由证据重新登记，防止旧证据冒充新来源。
 
 ```bash
 SKILL_DIR=./mm-write-short-drama
@@ -278,13 +281,15 @@ python3 "$SKILL_DIR/scripts/init_project.py" "$PROJECT" --mode original
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" status
 ```
 
-三来源分别为 `--mode adaptation`、`--mode original`、`--mode market-research`。旧 `--mode source-remix` 保留原素材再创作含义，不能自动改标为近期检索。`--through brief|story-bible|full` 仅决定创建骨架的范围，文件存在不等于内容完成。
+来源回执分别用 `--source-mode original`、`--source-mode adaptation`、`--source-mode market_research`；骨架对应 `--mode original|adaptation|market-research`。旧 `--mode source-remix` 保留原素材再创作含义，不能自动改标为近期检索。`--through brief|story-bible|full` 仅决定创建骨架的范围，文件存在不等于内容完成。
 
-缺规格的骨架保持 `awaiting_production_specs`，`status` 依次显示等待制作方式、单集时长或期望集数。用以下命令逐步转录真实选择（所有引号示例须换成用户真实原话与消息定位）：
+缺规格的骨架保持 `awaiting_production_specs`，`status` 依次显示等待制作方式、创作来源、单集时长或期望集数。用以下命令逐步转录真实选择（所有引号示例须换成用户真实原话与消息定位）：
 
 ```bash
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
   --production-mode live_action --user-quote '用户选择真人的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --source-mode original --user-quote '用户选择自己编写的原话' --message-ref '真实消息定位'
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
   --duration-seconds 90 \
   --user-quote '用户选择90秒的原话' --message-ref '真实消息定位'
@@ -293,7 +298,15 @@ python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
   --user-quote '用户期望40到60集的原话' --message-ref '真实消息定位'
 ```
 
-AI用 `--production-mode ai_drama`；范围时长用 `--duration-range 50-60`。用户一次说全时，init也可同时传 `--production-mode live_action --duration-seconds 90 --episode-count '40-60' --specs-user-quote '真实原话' --specs-message-ref '真实消息定位'`。新增时长/集数参数必须配真实回执；旧制作方式/总数参数单独出现仅作待核候选，不能猜旧字段已确认。规格未齐不能运行 treatment/outline 审读或进入分集、正文。
+来源选定后了解题材与其他普通需求，再记录时长和期望集数；题材等普通需求可先标待定。AI用 `--production-mode ai_drama`；`--source-mode` 支持 `original|adaptation|market_research`，`source_remix` 仅兼容旧项目；范围时长用 `--duration-range 50-60`。新增来源/时长/集数参数必须配真实回执；旧制作方式/骨架路线/总数参数不自动成为已选。四项未齐不能运行 treatment/outline 审读或进入分集、正文。
+
+用户已明确四项选择后，可以一次初始化（例中的自己编写来源也已明确）：
+
+```bash
+python3 "$SKILL_DIR/scripts/init_project.py" ./projects/complete-example --mode original \
+  --production-mode live_action --source-mode original --duration-seconds 90 --episode-count '40-60' \
+  --specs-user-quote '用户实际说全四项规格的原话' --specs-message-ref '真实消息定位'
+```
 
 期望数保存在 `.drama/production-specs.json`；实际总数和理由另存 `.drama/episode-plan.json`，`state.totalEpisodes` 镜像实际数。规格齐全、写好来源证据和故事底稿后：
 
@@ -336,7 +349,7 @@ python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" check-writing
 
 先保存前后稿，按需局部编辑或原样通过，用 `polish_guard.py inspect|record|check` 留下当前hash的最终语义复核记录。程序是保守差异检查，金额、责任人、日期、否定、条件与承诺仍需逐处读。外部Humanizer的旧token检查单独通过不构成语义通过。
 
-正式Word的全剧集数按 `state.totalEpisodes` 实际规划填写，不用期望数或范围冒填。首集之前按顺序包含：剧本名、来源、类型/短剧类型、集数（全剧与本稿范围）、剧名寓意、热门元素、创作理由、故事梗概、主要角色。由已确认材料生成当前项目内容，不能套用样剧人物、空标题或虚构署名。分批稿写清本批收束与未来回收归属。
+Word的“类型/短剧类型”填写题材，制作方式单独记录。正式Word的全剧集数按 `state.totalEpisodes` 实际规划填写，不用期望数或范围冒填。首集之前按顺序包含：剧本名、来源、类型/短剧类型、集数（全剧与本稿范围）、剧名寓意、热门元素、创作理由、故事梗概、主要角色。由已确认材料生成当前项目内容，不能套用样剧人物、空标题或虚构署名。分批稿写清本批收束与未来回收归属。
 
 ```bash
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" review-pack \
