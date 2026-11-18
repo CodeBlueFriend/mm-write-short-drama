@@ -1,6 +1,6 @@
 # v1.2 工作流设计
 
-本文记录 v1.2 系列的实现与兼容范围。最新安装与升级步骤见 [v1.2.1 说明](versions/v1.2.1.md)。历史设计保留在 [v1.1 知识库设计](knowledge-base-design-v1.1.md) 和 [版本说明](versions/v1.1.md) 中。
+本文记录 v1.2 系列的实现与兼容范围。最新安装与内置知识卡见 [项目首页](../README.md)。历史设计保留在 [v1.1 知识库设计](knowledge-base-design-v1.1.md) 和 [版本说明](versions/v1.1.md) 中。
 
 ## 源码与数据边界
 
@@ -106,7 +106,7 @@ python3 "$SKILL_DIR/scripts/impact_analysis.py" ./projects/example \
 
 `ingest_knowledge.py` 保留原文、生成候选卡、查重和冻结冲突；`knowledge_lib.py` 提供共享的索引与归档实现；`search_knowledge.py` 筛选和排序；`validate_knowledge.py` 检查字段、来源哈希、能力卡来源信息、冲突与索引。脚本负责确定性处理，模型负责语义复核。新的知识导入先在隔离库以 `draft` 核对，不能用重新导入 `active` 跳过既有待审状态。
 
-能力接口不附带私人书籍资料或个人已启用卡；安装 Skill 后应连接自己的合规知识库。找不到知识库时继续使用内置工作流，并说明本轮未加载个人知识。
+随技能安装的公开卡是依据公开出处撰写的三项短剧适配规则。没有个人知识库也能按阶段检索。配置个人库时，同一能力下符合当前查询的个人卡优先。个人卡和原始资料继续在独立工作区维护。
 
 ## Word 模板与导出
 

@@ -4,7 +4,7 @@
 
 写到第八集才发现，主角用来对质的证据第三集已经被别人拿走了。这个技能把人物知道什么、道具在谁手里、伏笔在哪一集兑现都记在项目里。隔几天换个对话，你可以从上次确认的进度接着写。
 
-[安装技能](#安装) · [四本书的五项写作能力](#四本书对应的五项写作能力) · [跟做一个六集项目](#跟做一个六集项目) · [了解设计流程](#从创意到交付) · [下载 Word 版式样本](mm-write-short-drama/assets/screenplay-base-template.docx) · [联系开发者](#交流与反馈)
+[安装技能](#安装) · [内置编剧知识卡](#四本书对应的五项写作能力) · [跟做一个六集项目](#跟做一个六集项目) · [了解设计流程](#从创意到交付) · [下载 Word 版式样本](mm-write-short-drama/assets/screenplay-base-template.docx) · [联系开发者](#交流与反馈)
 
 ## 先看看你能用它做什么
 
@@ -20,10 +20,10 @@
 
 ## 安装
 
-在 Codex 粘贴下面这条指令，一次安装稳定版 [v1.2.1](https://github.com/CodeBlueFriend/mm-write-short-drama/releases/tag/v1.2.1)。Humanizer 规则和校验工具随技能一起下载。
+在 Codex 粘贴下面这条指令，一次安装稳定版 [v1.2.2](https://github.com/CodeBlueFriend/mm-write-short-drama/releases/tag/v1.2.2)。Humanizer 规则、校验工具和三张编剧知识卡随技能一起安装。
 
 ```text
-$skill-installer 从 https://github.com/CodeBlueFriend/mm-write-short-drama/tree/v1.2.1/mm-write-short-drama 安装技能
+$skill-installer 从 https://github.com/CodeBlueFriend/mm-write-short-drama/tree/v1.2.2/mm-write-short-drama 安装技能
 ```
 
 装好后，打开用来放原著和剧本的工作区，在对话中输入 `$mm-write-short-drama`，再说你想做什么。如果技能没有出现在列表里，重启 Codex。安装方式见 [Codex 技能文档](https://developers.openai.com/codex/skills#install-curated-skills-for-local-use)。
@@ -32,7 +32,7 @@ $skill-installer 从 https://github.com/CodeBlueFriend/mm-write-short-drama/tree
 <summary>从 GitHub 手动安装</summary>
 
 ```bash
-git clone --depth 1 --branch v1.2.1 \
+git clone --depth 1 --branch v1.2.2 \
   https://github.com/CodeBlueFriend/mm-write-short-drama.git
 mkdir -p "$HOME/.agents/skills/mm-write-short-drama"
 cp -R mm-write-short-drama/mm-write-short-drama/. "$HOME/.agents/skills/mm-write-short-drama/"
@@ -124,21 +124,21 @@ flowchart TD
 
 ### 四本书对应的五项写作能力
 
-开发者从四本书的蒸馏材料中整理了五个短剧写作入口。写到哪里卡住，就用对应的方法查稿。比如第二集的悬念没人接，可以直接把集尾和第三集开场交给 Codex 对读。
+装完技能，立项时就能查一句梗概，排整季时能查节拍，改对白时能查言语行动。三张内置卡都有短剧用法、原创例子和公开出处，空白项目也能用。
 
-| 书目 | 能力 | 什么时候用 |
+| 书目 | 写作能力 | 随技能安装的状态 |
 | --- | --- | --- |
-| 《救猫咪：电影编剧指南》 | 一句梗概 | 创意说得出题材却说不清主角要做什么。先厘清目标、阻力和失败代价。 |
-| 《救猫咪：电影编剧指南》 | 整季节拍 | 中段反复或结局缺铺垫。检查前因、人物选择和改变的局面，再分配到各集。 |
-| 《编剧路线图》 | 人物秘密 | 角色提前知道真相，或反转缺线索。对照人物和观众的知情范围，安排揭露点和后果。 |
-| 《从零开始学短剧创作》 | 上下集卡点兑现 | 上集给了悬念，下集开场却没接住。把集尾承诺和下集第一个行动放在一起检查。 |
-| 罗伯特·麦基《对白》 | 用对白做事 | 角色说了很多，关系和局面却毫无变化。逐轮检查各自的目的、言语策略和对方反应。 |
+| 《救猫咪：电影编剧指南》 | 一句梗概。创意只有题材时，先厘清主角目标、阻力和失败代价。 | [已内置](mm-write-short-drama/assets/builtin-knowledge/cards/BUILTIN-LOGLINE.md) |
+| 《救猫咪：电影编剧指南》 | 整季节拍。中段反复时，检查每个转折有没有改变局面和后续选择。 | [已内置](mm-write-short-drama/assets/builtin-knowledge/cards/BUILTIN-SEASON-BEATS.md) |
+| 罗伯特·麦基《对白》 | 言语行动。对质场面卡住时，检查角色试图通过一句话让对方做什么。 | [已内置](mm-write-short-drama/assets/builtin-knowledge/cards/BUILTIN-VERBAL-ACTION.md) |
+| 《编剧路线图》 | 人物秘密。可用连续性流程查谁在何时知道什么。 | 书籍卡待核验 |
+| 《从零开始学短剧创作》 | 集尾兑现。可用现有流程对读集尾和下集开场。 | 书目已核对目录，具体写法为项目实践 |
 
 ```text
-$mm-write-short-drama 帮我对读第 3 集结尾和第 4 集开场，看看观众等的答案有没有推进。给一组可直接替换的集尾和开场，其余剧情保留。
+$mm-write-short-drama 用“一句梗概”内置卡检查我的创意。先找出主角想做什么、有什么阻力，再给一句可复述的版本。缺的设定请留作待确认项。
 ```
 
-安装后即可调用这些能力入口。个人知识卡和书籍资料留在独立知识库，检索时选已启用且适合当前任务的卡。人物秘密的书籍卡还在核对来源，现阶段由连续性流程检查谁在何时掌握了线索。卡点兑现的步骤来自短剧项目实践，书目用于定位相关主题。[能力入口与来源边界](mm-write-short-drama/references/writing-capabilities.md)
+个人知识卡和原书资料继续在本地管理。上表标为待核验的书籍卡保持停用。
 
 ### 导出给演员和制片的 Word
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Search only task-relevant, approved personal screenwriting knowledge cards."""
+"""Search approved built-in and personal screenwriting cards by task."""
 
 from __future__ import annotations
 
@@ -8,10 +8,30 @@ import json
 from pathlib import Path
 from typing import Any
 
-from knowledge_lib import list_value, load_jsonl, rebuild_index, resolve_kb, tokenize
+from knowledge_lib import iter_cards, list_value, load_jsonl, rebuild_index, resolve_kb, tokenize
 
 
 PRIORITY_SCORE = {"hard": 4.0, "preferred": 3.0, "optional": 2.0, "experimental": 1.0}
+BUILTIN_ROOT = Path(__file__).resolve().parents[1] / "assets" / "builtin-knowledge"
+
+
+def load_cards(kb: Path | None, rebuild: bool) -> list[dict[str, Any]]:
+    cards = []
+    for card in iter_cards(BUILTIN_ROOT):
+        if card.get("status") == "active":
+            card.pop("_path")
+            cards.append({**card, "card_origin": "builtin"})
+    try:
+        root = resolve_kb(kb)
+    except FileNotFoundError:
+        if kb is not None or rebuild:
+            raise
+        return cards
+    index = root / "index" / "cards.jsonl"
+    if rebuild or not index.exists():
+        rebuild_index(root)
+    cards.extend({**card, "card_origin": "personal"} for card in load_jsonl(index))
+    return cards
 
 
 def scope_matches(card: dict[str, Any], key: str, requested: str | None) -> bool:
@@ -37,7 +57,9 @@ def score_card(card: dict[str, Any], query: str) -> float:
     if query_lower in category.lower():
         score += 4
     query_terms = tokenize(query)
-    card_terms = set(card.get("search_terms") or tokenize(" ".join((rule, title, category))))
+    card_terms = set(card.get("search_terms") or tokenize(" ".join(
+        (rule, title, category, str(card.get("triggers", "")), str(card.get("action", "")))
+    )))
     if query_terms:
         score += 10 * len(query_terms & card_terms) / len(query_terms)
     return score
@@ -63,7 +85,7 @@ def markdown_table(cards: list[dict[str, Any]]) -> str:
 
 
 def context_block(cards: list[dict[str, Any]]) -> str:
-    lines = ["## 本任务检索到的个人编剧规则", ""]
+    lines = ["## 本任务检索到的编剧规则", ""]
     if not cards:
         lines.append("> 没有匹配且可应用的 active 规则。")
         return "\n".join(lines)
@@ -71,7 +93,8 @@ def context_block(cards: list[dict[str, Any]]) -> str:
         exceptions = card.get("exceptions") or []
         rule = str(card.get("rule", "")).rstrip("。；;，, ")
         suffix = f"；例外：{'、'.join(str(item) for item in exceptions)}" if exceptions else ""
-        lines.append(f"- **{card['id']}** [{card.get('priority', '')}] {rule}{suffix}。")
+        origin = "内置" if card["card_origin"] == "builtin" else "个人"
+        lines.append(f"- **{card['id']}**（{origin}） [{card.get('priority', '')}] {rule}{suffix}。")
         for key, label in (("capability_id", "原能力"), ("source_note", "来源范围"),
                            ("source_url", "来源链接"), ("source_verification", "核验"),
                            ("triggers", "触发"), ("diagnosis", "诊断"), ("action", "动作"),
@@ -93,7 +116,7 @@ def context_block(cards: list[dict[str, Any]]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("query", nargs="?", default="", help="Keywords or task description")
-    parser.add_argument("--kb", type=Path, help="Knowledge-base root")
+    parser.add_argument("--kb", type=Path, help="Optional personal knowledge-base root")
     parser.add_argument("--stage", help="planning/structure/episode/scene/dialogue/review/adaptation")
     parser.add_argument("--category")
     parser.add_argument("--capability", help="Exact original capability ID; other filters still apply")
@@ -102,15 +125,12 @@ def main() -> int:
     parser.add_argument("--status", default="active", help="Comma-separated statuses; defaults to active only")
     parser.add_argument("--limit", type=int, default=10)
     parser.add_argument("--format", choices=("table", "json", "context", "ids"), default="table")
-    parser.add_argument("--rebuild", action="store_true", help="Rebuild deterministic indexes before searching")
+    parser.add_argument("--rebuild", action="store_true", help="Rebuild the personal index before searching")
     args = parser.parse_args()
     if args.limit < 1:
         parser.error("--limit must be positive")
     try:
-        root = resolve_kb(args.kb)
-        if args.rebuild or not (root / "index" / "cards.jsonl").exists():
-            rebuild_index(root)
-        cards = load_jsonl(root / "index" / "cards.jsonl")
+        cards = load_cards(args.kb, args.rebuild)
     except (FileNotFoundError, ValueError) as exc:
         parser.error(str(exc))
 
@@ -133,6 +153,14 @@ def main() -> int:
         if args.query and relevance <= PRIORITY_SCORE.get(str(card.get("priority")), 0.0):
             continue
         selected.append({**card, "_score": round(relevance, 4)})
+    personal_capabilities = {
+        card["capability_id"] for card in selected
+        if card["card_origin"] == "personal" and card["status"] == "active" and card.get("capability_id")
+    }
+    selected = [
+        card for card in selected
+        if card["card_origin"] == "personal" or card.get("capability_id") not in personal_capabilities
+    ]
     selected.sort(key=lambda item: (-float(item["_score"]), str(item.get("id"))))
     selected = selected[: args.limit]
 

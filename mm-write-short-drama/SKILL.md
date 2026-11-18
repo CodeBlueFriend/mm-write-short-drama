@@ -14,7 +14,7 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 3. 新项目先用 `scripts/init_project.py` 创建目录；用户已限定本轮阶段时用 `--through brief|story-bible`，避免提前创建下游空文件。再填写项目启动单。改编项还要确认素材位置、来源和授权状态；只记录授权声明，不代替法律判断。
 4. 只追问会改变结果的关键缺口，一次最多三项。其余标记为“待定”，不得偷偷固化。
 5. 按当前阶段读取资源，不要一次加载全部参考资料或全部原著。
-6. 优先读取项目启动单中的“个人知识库路径”，否则从当前工作区向上查找 `knowledge-base/`；找到后按 [knowledge-base.md](references/knowledge-base.md) 检索，找不到则继续使用 Skill 内置规则并说明本轮未加载个人知识库。
+6. 优先读取项目启动单中的“个人知识库路径”，否则从当前工作区向上查找 `knowledge-base/`；按 [knowledge-base.md](references/knowledge-base.md) 用同一命令检索内置卡与可选个人知识库。找不到个人库时直接检索随技能安装的内置卡。
 
 ## 选择路线与资源
 
@@ -31,11 +31,11 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 - 生成剧本 Word 交付件或维护其版式：读取 [word-delivery.md](references/word-delivery.md)，默认使用 [基础 Word 模板](assets/screenplay-base-template.docx)，运行 `scripts/export_screenplay_docx.py`，再按其中的渲染门逐页检查；模板仅提供格式，不提供剧本内容。
 - 录入、检索和运用个人技巧：读取 [knowledge-base.md](references/knowledge-base.md)。知识卡规范见 [techniques-catalog.md](references/techniques-catalog.md)，对话或批量录入细节见 [techniques-inbox.md](references/techniques-inbox.md)。
 
-## 分阶段检索个人知识
+## 分阶段检索编剧知识
 
 日常梗概、结构、秘密揭露、相邻集卡点、对白改稿，以及“教我写/给我练一题”，先按 [五项写作能力](references/writing-capabilities.md) 从原文证据定位问题，再用下述检索入口选已启用卡。用户无需指定书名。局部任务先交范围内可用稿，纯润色不改锁定剧情，无隐瞒驱动的戏跳过秘密方法；教学才采用诊断、示范、复练。书籍原则、公开目录主题与交接包项目实践分开归属，不将检索命中或材料存在报告成已应用或已核全文。
 
-在开始生成当前阶段产物前运行 `scripts/search_knowledge.py`，只装配匹配任务的少量 `active` 卡片：
+在开始生成当前阶段产物前运行 `scripts/search_knowledge.py`，只装配匹配任务的少量 `active` 卡片。内置卡可直接使用。同能力有匹配任务的已启用个人卡时，优先采用个人卡：
 
 - 故事发现、故事圣经：`--stage planning`；
 - 整季结构：`--stage structure`；

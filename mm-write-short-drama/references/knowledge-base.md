@@ -2,7 +2,7 @@
 
 ## 分离原则
 
-把 `SKILL.md` 和 `references/` 视为稳定流程，把仓库根目录 `knowledge-base/` 视为个人长期知识。升级 Skill 时保留知识库；录入知识时不要把个人技巧追加到 `SKILL.md`。
+把 `SKILL.md` 和 `references/` 视为稳定流程，把仓库根目录 `knowledge-base/` 视为个人长期知识。升级 Skill 时保留知识库。随技能发布的只读内置卡位于 `assets/builtin-knowledge/cards/`，在个人库录入或重建索引时保留两处存储的独立性。
 
 ## 录入
 
@@ -25,7 +25,6 @@
 
 ```bash
 python3 scripts/search_knowledge.py "当前任务摘要" \
-  --kb /path/to/knowledge-base \
   --stage episode \
   --genre 女频复仇 \
   --production-mode live-action \
@@ -33,7 +32,7 @@ python3 scripts/search_knowledge.py "当前任务摘要" \
   --format context
 ```
 
-默认只返回 `active`。按以下顺序裁决：当前项目明确要求 → 项目锁定事实 → 安全/版权硬约束 → active hard → 题材/制作范围匹配的 preferred → optional → experimental。知识卡与前三项冲突时，不改项目；记录该卡被覆盖及原因。
+默认只返回 `active`。无个人库时直接查询内置卡。命令会自动查找工作区附近的个人库，也可用 `--kb /path/to/knowledge-base` 指定。查询范围和任务都匹配时，同一能力的个人卡优先于内置卡。结果会标出内置或个人来源。按以下顺序裁决：当前项目明确要求 → 项目锁定事实 → 安全/版权硬约束 → active hard → 题材/制作范围匹配的 preferred → optional → experimental。知识卡与前三项冲突时，不改项目；记录该卡被覆盖及原因。
 
 应用前检查 `exceptions`。只有规则实际改变了方案、文字或审核结论，才把 ID 记为“实际使用”；只看过但未使用的规则可记为“检索但未使用”。
 
