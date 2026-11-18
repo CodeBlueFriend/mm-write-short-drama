@@ -20,6 +20,19 @@
 
 ## 安装
 
+### 在 Codex 插件列表里安装
+
+在终端运行这两条命令。第一条添加项目的 GitHub 插件来源，第二条安装「短剧编剧 · Screenwriter」。
+
+```bash
+codex plugin marketplace add CodeBlueFriend/mm-write-short-drama
+codex plugin add mm-write-short-drama@short-drama
+```
+
+喜欢从列表安装的话，添加来源后，在 Codex CLI 输入 `/plugins`，切换到 `short-drama` 即可选中它。装好后开一个新对话，例如「用短剧编剧把这个想法整理成六集大纲」。[Codex 插件来源说明](https://developers.openai.com/plugins/build/plugins#add-a-marketplace-from-the-cli) · [插件隐私说明](docs/plugin-privacy.md)
+
+### 通过技能安装器安装
+
 在 Codex 粘贴下面这条指令，一次安装稳定版 [v1.2.2](https://github.com/CodeBlueFriend/mm-write-short-drama/releases/tag/v1.2.2)。Humanizer 规则、校验工具和三张编剧知识卡随技能一起安装。
 
 ```text
