@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mm-write-short-drama/schemas/episode-plan.schema.json",
+  "title": "Actual episode plan, separate from the flexible creator preference",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "plannedTotalEpisodes", "planReason", "specsHash", "plannedAt"],
+  "properties": {
+    "schemaVersion": {"const": "1.0.0"},
+    "plannedTotalEpisodes": {"type": ["integer", "null"], "minimum": 1},
+    "planReason": {"type": ["string", "null"], "minLength": 1},
+    "specsHash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "plannedAt": {"type": ["string", "null"], "format": "date-time"}
+  }
+}

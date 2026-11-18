@@ -16,7 +16,18 @@ source_modes:
     label: 检索近期爆款后创作
     required_references: [workflow.md, source-intake.md, original-creation.md]
     required_artifacts: [00-project-brief.md, source-evidence.json, 02-market-research.md, 03-story-treatment.md, 04-story-bible.md]
+production_spec_intake:
+  selection_order: [production_mode, episode_duration, expected_episode_count]
+  new_project_modes: [live_action, ai_drama]
+  storage: .drama/production-specs.json
+  pending_stage: awaiting_production_specs
+  evidence: [user_quote, message_ref]
+  expected_episode_count: exact_or_range
+  actual_plan_storage: .drama/episode-plan.json
+  actual_total_episodes: state.totalEpisodes
+  deviation: explain_story_reason_and_confirm_current_outline
 common_gates:
+  - explicit_user_production_specs
   - treatment_two_pass_review
   - outline_two_pass_review
   - explicit_user_confirmation_of_current_outline
@@ -31,10 +42,10 @@ production_modes:
     label: AI
     review_reference: production-modes.md
   hybrid:
-    label: 混合
+    label: 混合（旧项目/评估兼容，不满足新项目规格选择）
     review_reference: production-modes.md
   unspecified:
-    label: 暂不限
+    label: 暂不限（未选择，不满足新项目规格门）
     review_reference: null
 orientations:
   vertical: 竖屏

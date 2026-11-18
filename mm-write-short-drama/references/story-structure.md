@@ -1,5 +1,16 @@
 # 故事圣经、整季结构与分集矩阵
 
+## 规格与实际规划
+
+制作方式、单集时长与期望集数须先有真实用户选择。期望具体数/范围保存在 `.drama/production-specs.json`；大纲实际总数与理由保存于 `.drama/episode-plan.json`（`plannedTotalEpisodes/planReason`），`state.totalEpisodes` 镜像实际数，不得把期望直接冒填成完成规划。根据完整故事决定实际数，用下列命令记录，`--reason` 写真实剧情理由：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-plan \
+  --total-episodes 58 --reason '当前故事各阶段的实际规划理由'
+```
+
+偏离期望具体数或范围须在大纲说明，合理浮动不设固定±10%。底稿审读绑定规格，大纲及后续审读另绑定实际plan；记录实际数不无故使底稿审读失效。该记录不是用户批准；仍需大纲审读和对当前版本的人工确认。
+
 ## 故事圣经
 
 至少填写：一句话、主题与情绪承诺、世界规则、角色档案、人物关系、人物声纹、主/支线、人物弧、秘密及揭示顺序、结局、禁止改变项。把“不确定”和“已锁定”分开标记。

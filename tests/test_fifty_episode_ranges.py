@@ -29,7 +29,7 @@ try:
 except SystemExit:
  ex=None
 sys.path.insert(0,str(SCRIPTS.parent/'evals/fixtures'))
-from workflow_fixture import fixture_polish
+from workflow_fixture import choose_specs, fixture_polish
 
 TAG='software-fixture'
 IDS=[f'{n:03d}' for n in range(1,51)]
@@ -54,6 +54,7 @@ def write_front(root,end):
 
 def seed(root):
  run_main(init_project,root,'--mode','original','--total-episodes','50','--review-mode','automatic')
+ choose_specs(root,50)
  source=w.read_json(root/w.SOURCE);source['originalIdea']='software-fixture: fifty numbered legal episode/scene records, not an authored story.';w.save_json(root/w.SOURCE,source)
  for name in [w.TREATMENT,'04-story-bible.md',w.OUTLINE]:
   (root/name).write_text('# software-fixture\n\nsoftware-fixture：夹具甲逐项检查编号；标记一在第35项到期。仅为确定性软件回归，不声称创作或文学审核。\n',encoding='utf-8')

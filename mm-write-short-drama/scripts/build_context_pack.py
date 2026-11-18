@@ -88,6 +88,8 @@ def main() -> int:
     parts = [f"# EP{start:03d}—EP{end:03d} 上下文包", "", "> 这是源文件的便利快照，不是新的事实源。", ""]
     for title, relative in (
         ("项目状态", ".drama/project-state.json"),
+        ("用户选择的制作规格", ".drama/production-specs.json"),
+        ("大纲实际集数与规划理由", ".drama/episode-plan.json"),
         ("当前工作流与大纲确认", ".drama/workflow.json"),
         ("产物依赖索引", ".drama/artifact-index.json"),
         ("项目启动单", "00-project-brief.md"),

@@ -13,6 +13,7 @@ def run(name, *args):
 def seed(root, mode="original", review_mode="strict"):
     result = run("init_project.py", root, "--mode", mode, "--review-mode", review_mode, "--total-episodes", 2)
     assert result.returncode == 0, result.stderr
+    choose_specs(root, 2)
     source = wf.read_json(root / wf.SOURCE)
     source["originalIdea"] = "修伞人要退还借走的旧伞，修复遗物的代价是错过有酬订单。"
     wf.save_json(root / wf.SOURCE, source)
@@ -21,6 +22,18 @@ def seed(root, mode="original", review_mode="strict"):
     for number in ("001", "002"):
         (root / f"episodes/EP{number}.md").write_text(f"# 第{int(number)}集\n\n## 本集控制信息\n测试\n\n## {int(number)}-1 日 内 修伞铺\n人物：林初、父亲\n△林初将订单移开，摆上旧伞。\n林初：先把借的还上。\n\n## 本集连续性更新\n归还旧伞。\n", encoding="utf-8")
     (root / "front-matter.md").write_text("# 合成验收夹具\n\n已写内容和范围，供程序测试，不代表用户确认。\n", encoding="utf-8")
+
+
+def choose_specs(root, total=2, *, episode_count=None):
+    """Declare software inputs without representing them as creator approval."""
+    result = run("workflow.py", root, "set-specs", "--production-mode", "live_action",
+                 "--duration-seconds", 90, "--episode-count", episode_count or str(total),
+                 "--user-quote", "software-fixture: synthetic selection for software regression; not real user approval",
+                 "--message-ref", "software-fixture")
+    assert result.returncode == 0, result.stderr
+    result = run("workflow.py", root, "set-plan", "--total-episodes", total,
+                 "--reason", "software-fixture: deterministic episode count for software regression")
+    assert result.returncode == 0, result.stderr
 
 
 def finish_review(root, stage, ids=None, issues=None):

@@ -6,6 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
+from production_specs import set_specs, set_plan
+
 from workflow_lib import (
     DOMAINS, confirm_outline, episode_range, load_workflow, read_json, record_review,
     review_pack, reveal_context, save_json, session_path, submit_first_read,
@@ -18,6 +20,17 @@ def main() -> int:
     parser.add_argument("project_dir", type=Path)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("status", help="Resume, detect changed inputs and persist stale states")
+    specs = sub.add_parser("set-specs", help="Record actual creator choices, in order: format, duration, flexible episode preference")
+    specs.add_argument("--production-mode", choices=("live_action", "ai_drama"))
+    duration = specs.add_mutually_exclusive_group()
+    duration.add_argument("--duration-seconds", type=int)
+    duration.add_argument("--duration-range")
+    specs.add_argument("--episode-count")
+    specs.add_argument("--user-quote", required=True)
+    specs.add_argument("--message-ref", required=True)
+    plan = sub.add_parser("set-plan", help="Record the actual outline episode count and its planning reason")
+    plan.add_argument("--total-episodes", type=int, required=True)
+    plan.add_argument("--reason", required=True)
     pack = sub.add_parser("review-pack", help="Create ordered raw-text chunks, with no author answers in pass one")
     pack.add_argument("--stage", choices=tuple(DOMAINS), required=True)
     pack.add_argument("--episodes", type=episode_range, default=[])
@@ -44,6 +57,14 @@ def main() -> int:
     try:
         load_workflow(root)
         if args.command == "status":
+            result = synchronize(root)
+        elif args.command == "set-specs":
+            set_specs(root, production_mode=args.production_mode, duration_seconds=args.duration_seconds,
+                      duration_range=args.duration_range, episode_count=args.episode_count,
+                      user_quote=args.user_quote, message_ref=args.message_ref)
+            result = synchronize(root)
+        elif args.command == "set-plan":
+            set_plan(root, args.total_episodes, args.reason)
             result = synchronize(root)
         elif args.command == "review-pack":
             front = str(args.front_matter.resolve().relative_to(root)) if args.front_matter else None

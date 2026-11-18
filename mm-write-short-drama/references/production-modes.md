@@ -1,6 +1,36 @@
 # 真人与 AI 制作适配
 
-故事与剧本主流程共用；制作形式只改变风险审核。未提供限制时，标记风险而不自行删改。
+新项目按“真人或 AI → 单集时长 → 期望集数”逐项取得用户选择；已明确的项直接记录。三项齐全后才构思故事底稿和大纲。`hybrid/unspecified` 保留旧项目与评估兼容，不代替新项目的真人/AI选择。
+
+## 本次固定时长策略
+
+以下是用户为本次程序指定的项目策略，不是新查到的平台规定，不为此上网核规范。
+
+| 制作方式 | 供用户选择的单集时长 | 边界 |
+|---|---|---|
+| 真人 | 推荐90秒；常见60—180秒，爆款常规80—120秒 | 新项目硬上限180秒；旧有超过180秒的存量稿不作为新项目默认。 |
+| AI | 主流50—60秒，90秒可选 | 超过120秒少见；用户明确自定义可保留，标为非常规，不改成绝对禁令。 |
+
+时长可用具体秒数或范围；不把推荐值当成已选。期望集数可为 `60` 或 `40-60`，是故事开发的目标，允许合理浮动。实际规划总数与理由另存 `.drama/episode-plan.json`，`state.totalEpisodes` 镜像实际数；偏离具体数或超出范围时说明剧情理由，最终随大纲人工确认，不设固定浮动比例。
+
+## 记录选择
+
+`set-specs` 的参数必须转录用户真实选择。以下引号内容只说明格式，必须换成真实原话与真实消息定位；不把示例当授权。
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --production-mode live_action --user-quote '用户选择真人的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --duration-seconds 90 \
+  --user-quote '用户选择90秒的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --episode-count '40-60' \
+  --user-quote '用户期望40到60集的原话' --message-ref '真实消息定位'
+```
+
+范围时长用 `--duration-range 80-120` 替代 `--duration-seconds 90`。`.drama/production-specs.json` 保存期望与逐步选择依据；未齐保持 `awaiting_production_specs`，`status` 指明下一项。新增时长/集数初始化参数无回执会被拒绝；旧制作方式/总数参数单独出现只作待核候选，旧字段不得猜成已选。
+
+故事与剧本主流程共用；制作方式也影响以下可行性审核。其他限制未提供时标记风险，不自行删改。
 
 ## 真人制作
 

@@ -10,15 +10,15 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 ## 启动任务
 
 1. 检查工作区是否已有短剧项目文件。续作时先读取 `.drama/project-state.json`、`.drama/artifact-index.json`、`00-project-brief.md`、`locked-decisions.md`、当前任务依赖的上游产物、相关连续性账本和最新变更记录，不凭聊天记忆续写。缺少新版状态文件的旧项目可继续只读处理；整季续作前先说明并迁移，不猜测状态。只改用户提供的局部文本时，从稿件摘取必要事实并限定范围，不以全项目迁移阻塞改稿。
-2. 路由任务：`source_mode`（小说改编/自主创意/检索近期爆款；兼容旧素材再创作）、`production_mode`（真人/AI/混合/暂不限）、`orientation`（竖屏/横屏/自定义）、`delivery_scope`（诊断/大纲/分集/剧本/审核/改写/技巧入库）、`review_mode`（严格确认/辅助确认/自动推进）。机器值与加载规则见 [routing-map.yaml](references/routing-map.yaml)。
-3. 新项目先用 `scripts/init_project.py` 创建目录；用户已限定本轮阶段时用 `--through brief|story-bible`，避免提前创建下游空文件。再填写项目启动单。改编项还要确认素材位置、来源和授权状态；只记录授权声明，不代替法律判断。
+2. 新项目先按顺序取得用户的三项选择：真人或 AI → 单集时长 → 期望集数（具体数或范围，允许按故事合理浮动）。用户已明确的选择直接记录，不重复问；未齐前只建空骨架/启动单、保存原始素材，不构思故事底稿、大纲或分集，绝不默认真人6集。按 [production-modes.md](references/production-modes.md) 展示本次固定时长策略，不为此上网查平台规范。
+3. 用 `scripts/init_project.py` 创建所需骨架；`--through brief|story-bible` 限定本轮范围。用 `workflow.py PROJECT set-specs` 分步保存真实原话与消息定位，齐全前保持 `awaiting_production_specs`；新增时长/集数初始化参数必须配真实回执；旧制作方式/总数参数单独出现只作待核候选。期望集数存 `.drama/production-specs.json`，实际规划总数用 `set-plan --total-episodes N --reason ...` 另存 `.drama/episode-plan.json`，`state.totalEpisodes` 镜像实际数，不冒填为同一个字段。再填写来源、屏幕、交付与协作路由，机器值见 [routing-map.yaml](references/routing-map.yaml)。改编项记录素材位置、来源和用户授权声明，不代替法律判断。
 4. 只追问会改变结果的关键缺口，一次最多三项。其余标记为“待定”，不得偷偷固化。
 5. 按当前阶段读取资源，不要一次加载全部参考资料或全部原著。
 6. 优先读取项目启动单中的“个人知识库路径”，否则从当前工作区向上查找 `knowledge-base/`；找到后按 [knowledge-base.md](references/knowledge-base.md) 检索，找不到则继续使用 Skill 内置规则并说明本轮未加载个人知识库。
 
 ## 选择路线与资源
 
-- 所有项目：读取 [workflow.md](references/workflow.md)。新项目再读 [三来源与故事底稿](references/source-intake.md)，恢复先运行 `scripts/workflow.py PROJECT status`。
+- 所有项目：读取 [workflow.md](references/workflow.md)。新项目先读 [制作方式与规格](references/production-modes.md)，规格齐全后再读 [三来源与故事底稿](references/source-intake.md)；恢复先运行 `scripts/workflow.py PROJECT status`，显示制作方式、时长或集数中的当前等待点。
 - 状态恢复、单集迁移、上游修改或失效传播：读取 [project-state.md](references/project-state.md)。
 - 原创发现：再读取 [original-creation.md](references/original-creation.md)。
 - 小说或素材改编：再读取 [adaptation.md](references/adaptation.md)；先运行 `scripts/index_source.py` 建索引。
@@ -26,7 +26,7 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 - 场次卡、角色推演、剧本和对白：读取 [scene-and-dialogue.md](references/scene-and-dialogue.md)。
 - 续写、跨集修改或审核：读取 [continuity.md](references/continuity.md)，必要时运行 `scripts/build_context_pack.py`。
 - 去 AI 味或台词改写：读取 [anti-ai-style.md](references/anti-ai-style.md)。
-- 真人/AI/混合制作风险：只在用户指定或请求评估时读取 [production-modes.md](references/production-modes.md)。
+- 真人/AI制作风险或旧混合项目评估：读取 [production-modes.md](references/production-modes.md)。
 - 审核、返修或交付：读取 [最终文本审读](references/final-reading.md) 与 [review-rubrics.md](references/review-rubrics.md)，并运行 `scripts/validate_project.py` 与 `scripts/screenplay_stats.py`。
 - 生成剧本 Word 交付件或维护其版式：读取 [word-delivery.md](references/word-delivery.md)，默认使用 [基础 Word 模板](assets/screenplay-base-template.docx)，运行 `scripts/export_screenplay_docx.py`，再按其中的渲染门逐页检查；模板仅提供格式，不提供剧本内容。
 - 录入、检索和运用个人技巧：读取 [knowledge-base.md](references/knowledge-base.md)。知识卡规范见 [techniques-catalog.md](references/techniques-catalog.md)，对话或批量录入细节见 [techniques-inbox.md](references/techniques-inbox.md)。
@@ -51,10 +51,10 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 按以下顺序推进；若用户只请求某一阶段，仍先验证它依赖的上游文件：
 
-1. 输出并保存项目启动单，同时更新 `.drama/project-state.json`；产物完成与否以文件、状态和校验结果为准，不以聊天中的口头声明为准。严格确认模式允许把非阻断选择作为 L2/待确认草案写到用户指定阶段，然后在下一个审核门暂停；只有会导致路线根本不同的真实阻断项才在起草前询问。
+1. 输出并保存项目启动单与规格回执，恢复当前等待点；制作方式、单集时长和期望集数是新项目起草的前置阻断项。三项未齐不得运行 treatment/outline 审读或写分集、正文。其他非阻断选择可作为 L2/待确认草案写到用户指定阶段；完成与否以文件、状态和校验结果为准。
 2. 根据三种来源读取原著/原始创意/实际近期检索证据，保存 `source-evidence.json`；旧素材来源标记保留。三路均先完成 `03-story-treatment.md`，实际读完底稿、审因果动机与来源，修好再过 `workflow.py ... --stage treatment`。
 3. 建立故事圣经。主角、核心关系、主要对手、世界规则、结局和主题立场须通过审核门 A。
-4. 建立能独立判断的大纲 `05-season-architecture.md`，包含连贯梗概、人物变化、阶段因果、高潮结局、伏笔兑现位置与规格。独立通读并通过 `workflow.py ... --stage outline` 后呈用户。严格/辅助/自动模式均等待用户明确确认此版本，记录真实原话、消息定位、时间、范围和内容摘要。运行 `confirm-outline` 保存该决定；没有用户确认不得进入分集/场次/正文。主角目标、核心冲突、重大转折或结局变动，旧确认及关联稿失效，重审后再次确认。
+4. 建立能独立判断的大纲 `05-season-architecture.md`，包含连贯梗概、人物变化、阶段因果、高潮结局、伏笔兑现位置、用户期望集数和实际规划总数。实际数偏离期望具体数或范围时说明剧情理由，不设固定±10%；用 `set-plan` 保存实际数，随大纲一并交用户判断。独立通读并通过 `workflow.py ... --stage outline` 后呈用户。严格/辅助/自动模式均等待用户明确确认此版本，记录真实原话、消息定位、时间、范围和内容摘要。运行 `confirm-outline` 保存该决定；没有用户确认不得进入分集/场次/正文。主角目标、核心冲突、重大转折或结局变动，旧确认及关联稿失效，重审后再次确认。
 5. 建立分集矩阵；先审核首批分集再扩展整季，通过审核门 C。
 6. 写场次卡，对关键场景按人物已知信息、即时欲望、恐惧和策略做行动推演。
 7. 默认每批写 3—5 集，不一次生成长季全剧。每场至少改变一项事实、关系、资源、信息、情绪策略或风险状态。

@@ -1,22 +1,29 @@
 # mm-write-short-drama（短剧编剧 Codex Skill）
 
-从小说、创意或近期市场参考开始，先把故事讲到结局，审过底稿和大纲，等创作者明确确认这一版，再分批写成可表演的短剧。每批交付一个含完整项目介绍的 Word；正文审读、事实复核和导出实物验收都对应实际文件版本。
+先由用户选择真人或AI、单集时长和期望集数，再从小说、创意或近期市场参考开始，把故事讲到结局，审过底稿和大纲，等创作者明确确认这一版，再分批写成可表演的短剧。每批交付一个含完整项目介绍的 Word；正文审读、事实复核和导出实物验收都对应实际文件版本。
 
 当前开发版保留 v1.1 个人知识库、故事圣经、分集矩阵、场次卡与连续性账本，新增三来源入口、大纲确认、两遍审读、五书24项方法摘要及正式交付门。它负责剧本，不负责分镜、生图、视频生成、剪辑或发布。
 
 ## 从哪里开始
 
-三种入口共用“故事底稿→底稿审读→大纲→大纲审读→用户确认”的过程。用户已经说明来源时直接选中，不必重复问一次。
+新项目先按“真人或AI → 单集时长 → 期望集数”取得真实选择；用户已经说清的项直接记录，不重复问。集数可为具体数或范围，允许按完整故事合理浮动；未齐时只建空骨架/启动单并保存原始素材，不默认真人6集，也不构思底稿或大纲。规格齐全后三种来源共用“故事底稿→底稿审读→大纲→大纲审读→用户确认”；已说明来源直接选中。
+
+本次固定策略：真人推荐90秒，常见60—180秒、爆款常规80—120秒，新项目硬上限180秒；旧有更长存量不作新项目默认。AI主流50—60秒、90秒可选，超过120秒少见；用户明确自定义可以保留并标非常规。这是用户指定的项目策略，不是新查到的平台规定。
 
 | 来源 | 普通指令示例 | 在开始写正文前交付 |
 |---|---|---|
-| 小说改编 | `把我提供的小说前五章改成6集真人短剧，先给大纲。` | 原著版本、章节定位、可用范围和授权状态，改编取舍与从开头讲到结局的故事底稿；未提供后续注明拟改编。 |
-| 自主创意 | `一个替人道歉的代理人，被迫替失踪十年的父亲向全城人道歉。帮我做6集短剧。` | 保留原始创意与锁定项，补足人物当下必须做的事、失败、取舍和结果，审后给大纲。 |
-| 检索近期爆款后创作 | `参考近30天国内平台的家庭关系短剧，先查可见材料，再构思新人物的新故事。` | 检索日期、窗口、平台地区、榜期与指标、链接和实际读到的内容层级，参考差异表与新故事。只有宣发就按宣发分析，热度不能核实就标待核。 |
+| 小说改编 | `把我提供的小说前五章改成真人短剧，每集90秒，期望6集，先给大纲。` | 原著版本、章节定位、可用范围和授权状态，改编取舍与从开头讲到结局的故事底稿；未提供后续注明拟改编。 |
+| 自主创意 | `一个替人道歉的代理人，被迫替失踪十年的父亲向全城人道歉。做AI短剧，每集50—60秒，期望40—60集。` | 保留原始创意与锁定项，补足人物当下必须做的事、失败、取舍和结果，审后给大纲。 |
+| 检索近期爆款后创作 | `做真人短剧，每集90秒，期望60集；参考近30天国内平台家庭关系短剧，先查材料再构思。` | 检索日期、窗口、平台地区、榜期与指标、链接和实际读到的内容层级，参考差异表与新故事。只有宣发就按宣发分析，热度不能核实就标待核。 |
 
 ```mermaid
 flowchart TD
-    S{"选择创作来源"} --> A["小说改编"]
+    P{"用户选择真人或AI"} --> T{"用户选择单集时长"}
+    T --> N{"用户输入期望集数或范围"}
+    N --> Q{"三项真实选择齐全"}
+    Q -->|缺项| W["等待对应规格，不起草"]
+    W --> Q
+    Q -->|齐全| S{"选择创作来源"} --> A["小说改编"]
     S --> B["自主创意"]
     S --> C["检索近期爆款"]
     A --> D["用梗概方法写故事底稿"]
@@ -27,12 +34,12 @@ flowchart TD
     E -->|通过| F["用进展纠葛与人物抉择构建大纲"]
     F --> G{"大纲通读"}
     G -->|退修| F
-    G -->|通过| H{"用户确认此版"}
+    G -->|通过| H{"用户确认此版及实际集数"}
     H -->|修改意见| F
     H -->|确认| I["锁定大纲版本"]
 ```
 
-呈给创作者的大纲包括一句话故事、连读梗概、主要人物目标与变化、分阶段因果、高潮结局、核心伏笔及兑现位置，同时写明总集数、单集时长和本次范围。严格、辅助、自动三种工作模式都必须停在这一版大纲的人工确认点。用户只要大纲时，在此结束。
+呈给创作者的大纲包括一句话故事、连读梗概、主要人物目标与变化、分阶段因果、高潮结局、核心伏笔及兑现位置，同时写明用户期望集数、实际规划总数、所选单集时长和本次范围。实际数可合理浮动，偏离具体数或范围须写剧情理由，不设固定±10%；最终随大纲人工确认。严格、辅助、自动三种工作模式都必须停在这一版大纲的人工确认点。用户只要大纲时，在此结束。
 
 “继续”“看看”“自动推进”不替代确认。记录用户确认原话、对话定位、时间、范围和当前内容hash；上游变动后旧确认失效，重启仍从等待点恢复。
 
@@ -40,7 +47,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["已确认的大纲"] --> B["分集承接与场景转折分析"]
+    A["规格齐全且已确认含实际集数的大纲"] --> B["分集承接与场景转折分析"]
     B --> C["按人物意图写动作和对白"]
     C --> D{"批次审稿"}
     D -->|返修| B
@@ -94,15 +101,15 @@ cp -R ./mm-write-short-drama/. "$SKILLS_DIR/mm-write-short-drama/"
 ## 常见请求
 
 ```text
-$mm-write-short-drama 根据我的创意建立6集都市情感短剧，先讲通完整故事，审后给大纲，等我确认再写。
+$mm-write-short-drama 根据我的创意建立真人都市情感短剧，每集90秒，期望60集；先讲通完整故事，审后给大纲，等我确认再写。
 ```
 
 ```text
-$mm-write-short-drama 把我提供的novel.md前五章改为12集，标原著定位和改编决定，未提供后续写成候选方案。
+$mm-write-short-drama 把我提供的novel.md前五章改为AI短剧，每集50—60秒，期望40—60集；标原著定位和改编决定，未提供后续写成候选方案。
 ```
 
 ```text
-$mm-write-short-drama 检索近30天家庭关系短剧，写清日期、平台、证据层级和热度待核项；提炼冲突方法，重新设计人物和结局。
+$mm-write-short-drama 做真人短剧，每集90秒，期望60集；检索近30天家庭关系短剧，写清日期、平台、证据层级和热度待核项，再设计新故事。
 ```
 
 ```text
@@ -231,6 +238,8 @@ python3 mm-write-short-drama/scripts/ingest_knowledge.py \
 project-name/
 ├── .drama/
 │   ├── project-state.json
+│   ├── production-specs.json   # 用户期望规格及真实选择回执
+│   ├── episode-plan.json       # 大纲实际总数和规划理由
 │   ├── artifact-index.json
 │   ├── workflow.json
 │   ├── invalidation-log.jsonl
@@ -265,12 +274,28 @@ project-name/
 ```bash
 SKILL_DIR=./mm-write-short-drama
 PROJECT=./projects/example
-python3 "$SKILL_DIR/scripts/init_project.py" "$PROJECT" --mode original --total-episodes 6
+python3 "$SKILL_DIR/scripts/init_project.py" "$PROJECT" --mode original
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" status
 ```
 
 三来源分别为 `--mode adaptation`、`--mode original`、`--mode market-research`。旧 `--mode source-remix` 保留原素材再创作含义，不能自动改标为近期检索。`--through brief|story-bible|full` 仅决定创建骨架的范围，文件存在不等于内容完成。
 
-写好来源证据和故事底稿后：
+缺规格的骨架保持 `awaiting_production_specs`，`status` 依次显示等待制作方式、单集时长或期望集数。用以下命令逐步转录真实选择（所有引号示例须换成用户真实原话与消息定位）：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --production-mode live_action --user-quote '用户选择真人的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --duration-seconds 90 \
+  --user-quote '用户选择90秒的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --episode-count '40-60' \
+  --user-quote '用户期望40到60集的原话' --message-ref '真实消息定位'
+```
+
+AI用 `--production-mode ai_drama`；范围时长用 `--duration-range 50-60`。用户一次说全时，init也可同时传 `--production-mode live_action --duration-seconds 90 --episode-count '40-60' --specs-user-quote '真实原话' --specs-message-ref '真实消息定位'`。新增时长/集数参数必须配真实回执；旧制作方式/总数参数单独出现仅作待核候选，不能猜旧字段已确认。规格未齐不能运行 treatment/outline 审读或进入分集、正文。
+
+期望数保存在 `.drama/production-specs.json`；实际总数和理由另存 `.drama/episode-plan.json`，`state.totalEpisodes` 镜像实际数。规格齐全、写好来源证据和故事底稿后：
 
 ```bash
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" status
@@ -288,7 +313,14 @@ python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" record-review --session READ
 
 模板包含 `firstRead` 与 `secondPass` 两个对象，需分别取出，在实际阅读后填写为上面的两个文件。空模板、`read:true` 或计分不能代替实读。每个检查域和问题都需可回指的原文证据；返回阻断问题时按根因返修，用新正文创建新会话复检。
 
-底稿通过后补大纲和圣经，运行 `review-pack --stage outline`，重复两遍审读。用户真实确认该版之后才执行：
+底稿通过后补大纲和圣经，按完整故事记录实际规划数（58只是命令示例）：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-plan \
+  --total-episodes 58 --reason '当前故事各阶段的实际规划理由'
+```
+
+再运行 `review-pack --stage outline`，重复两遍审读。底稿绑定规格，大纲及后续审读另绑定实际规划；定实际数不无故使已审底稿失效。用户真实确认该版之后才执行：
 
 ```bash
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" confirm-outline \
@@ -304,7 +336,7 @@ python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" check-writing
 
 先保存前后稿，按需局部编辑或原样通过，用 `polish_guard.py inspect|record|check` 留下当前hash的最终语义复核记录。程序是保守差异检查，金额、责任人、日期、否定、条件与承诺仍需逐处读。外部Humanizer的旧token检查单独通过不构成语义通过。
 
-正式Word在首集之前按顺序包含：剧本名、来源、类型/短剧类型、集数（全剧与本稿范围）、剧名寓意、热门元素、创作理由、故事梗概、主要角色。由已确认材料生成当前项目内容，不能套用样剧人物、空标题或虚构署名。分批稿写清本批收束与未来回收归属。
+正式Word的全剧集数按 `state.totalEpisodes` 实际规划填写，不用期望数或范围冒填。首集之前按顺序包含：剧本名、来源、类型/短剧类型、集数（全剧与本稿范围）、剧名寓意、热门元素、创作理由、故事梗概、主要角色。由已确认材料生成当前项目内容，不能套用样剧人物、空标题或虚构署名。分批稿写清本批收束与未来回收归属。
 
 ```bash
 python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" review-pack \

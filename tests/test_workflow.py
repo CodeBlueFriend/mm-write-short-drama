@@ -191,9 +191,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(any("contiguous" in e for e in wf.validate_release(self.root, ["002", "001"], None)))
 
     def test_future_promise_valid_in_partial_delivery_but_not_season_end(self):
-        state = wf.read_json(self.root / ".drama/project-state.json")
-        state["totalEpisodes"] = 50
-        wf.save_json(self.root / ".drama/project-state.json", state)
+        result = run("workflow.py", self.root, "set-plan", "--total-episodes", 50,
+                     "--reason", "software-fixture: exercise future promise and season-end boundaries")
+        self.assertEqual(result.returncode, 0, result.stderr)
         path = self.root / "continuity/foreshadowing.csv"
         path.write_text("foreshadow_id,setup,setup_episode,payoff_by,status\nF-1,旧伞,1,35,planned\n", encoding="utf-8")
         report = {"promiseAudit": [{"id": "F-1", "status": "future", "owner": "编剧", "plannedRange": "35"}]}

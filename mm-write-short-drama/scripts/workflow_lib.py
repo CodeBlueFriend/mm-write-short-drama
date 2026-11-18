@@ -14,12 +14,14 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from production_specs import SPECS, PLAN, readiness, selection_errors
+
 VERSION = "1.0.0"
 TREATMENT = "03-story-treatment.md"
 OUTLINE = "05-season-architecture.md"
 SOURCE = "source-evidence.json"
-LOCK_INPUTS = ["00-project-brief.md", "locked-decisions.md", "continuity/canon.yaml"]
-CONTEXT = [SOURCE, TREATMENT, "04-story-bible.md", OUTLINE,
+LOCK_INPUTS = ["00-project-brief.md", "locked-decisions.md", "continuity/canon.yaml", SPECS]
+CONTEXT = [SOURCE, TREATMENT, "04-story-bible.md", OUTLINE, PLAN,
            "06-episode-matrix.csv", *LOCK_INPUTS]
 DOMAINS = {
     "treatment": {"causality", "motivation", "ending", "source_fidelity"},
@@ -201,7 +203,7 @@ def source_dependencies(root: Path) -> list[str]:
 def review_pack(root: Path, stage: str, episodes: list[str], front_matter: str | None = None,
                 chunk_lines: int = 400) -> dict:
     workflow = load_workflow(root)
-    errors = source_errors(root)
+    errors = selection_errors(root, require_plan=stage != "treatment") + source_errors(root)
     if stage == "outline":
         errors += gate_errors(root, "treatment")
     if stage in {"batch", "final"}:
@@ -215,7 +217,7 @@ def review_pack(root: Path, stage: str, episodes: list[str], front_matter: str |
         dependencies = [SOURCE]
     elif stage == "outline":
         inputs = ["04-story-bible.md", OUTLINE]
-        dependencies = [SOURCE, TREATMENT]
+        dependencies = [SOURCE, TREATMENT, PLAN]
     else:
         if not episodes:
             raise ValueError("episode review requires --episodes")
@@ -569,6 +571,8 @@ def current_review(root: Path, stage: str, episodes: list[str] | None = None) ->
         errors = session_errors(root, session)
         if not set(LOCK_INPUTS).issubset(session.get("inputs", {})):
             errors.append(f"{stage} review does not bind current locked project inputs; reread this version")
+        if stage != "treatment" and PLAN not in session.get("inputs", {}):
+            errors.append(f"{stage} review does not bind actual episode plan; reread this version")
         receipt = session.get("report", {})
         report_path = local(root, receipt.get("path", "missing"))
         if not report_path.is_file() or digest(report_path) != receipt.get("sha256"):
@@ -596,11 +600,11 @@ def confirm_outline(root: Path, decision: str, quote: str, message_ref: str, sco
     if not quote.strip() or not message_ref.strip() or not scope.strip():
         raise ValueError("confirmation needs the actual user quote, message reference and scope")
     if decision == "confirm":
-        errors = source_errors(root) + gate_errors(root, "treatment") + gate_errors(root, "outline")
+        errors = selection_errors(root, require_plan=True) + source_errors(root) + gate_errors(root, "treatment") + gate_errors(root, "outline")
         if errors:
             raise ValueError("; ".join(errors))
     receipt = {"decision": decision, "userQuote": quote, "messageRef": message_ref,
-               "scope": scope, "recordedAt": now(), "inputs": snapshots(root, [SOURCE, TREATMENT, "04-story-bible.md", OUTLINE, *LOCK_INPUTS])}
+               "scope": scope, "recordedAt": now(), "inputs": snapshots(root, [SOURCE, TREATMENT, "04-story-bible.md", OUTLINE, PLAN, *LOCK_INPUTS])}
     workflow.setdefault("confirmationHistory", []).append(receipt)
     workflow["outlineConfirmation"] = receipt if decision == "confirm" else None
     workflow["phase"] = "outline_confirmed" if decision == "confirm" else "outline_revision"
@@ -613,11 +617,11 @@ def confirm_outline(root: Path, decision: str, quote: str, message_ref: str, sco
 def writing_errors(root: Path) -> list[str]:
     try:
         workflow = load_workflow(root)
-        errors = source_errors(root) + gate_errors(root, "treatment") + gate_errors(root, "outline")
+        errors = selection_errors(root, require_plan=True) + source_errors(root) + gate_errors(root, "treatment") + gate_errors(root, "outline")
         confirmation = workflow.get("outlineConfirmation")
         if not confirmation or confirmation.get("decision") != "confirm":
             errors.append("awaiting explicit user confirmation of this outline version")
-        elif not set(LOCK_INPUTS).issubset(confirmation.get("inputs", {})):
+        elif not set([*LOCK_INPUTS, PLAN]).issubset(confirmation.get("inputs", {})):
             errors.append("outline confirmation missing locked project inputs; reread and confirm this version")
         elif changed_inputs(root, confirmation.get("inputs", {})):
             errors.append("outline confirmation stale; re-review and obtain explicit confirmation of the changed version")
@@ -690,7 +694,7 @@ def synchronize(root: Path) -> dict:
     workflow = load_workflow(root)
     confirmation = workflow.get("outlineConfirmation")
     detected = set(changed_inputs(root, confirmation.get("inputs", {}))) if confirmation else set()
-    missing_locks = set(LOCK_INPUTS) - set(confirmation.get("inputs", {})) if confirmation else set()
+    missing_locks = set([*LOCK_INPUTS, PLAN]) - set(confirmation.get("inputs", {})) if confirmation else set()
     detected.update(missing_locks)
     if confirmation and (detected or missing_locks):
         workflow["outlineConfirmation"] = None
@@ -733,5 +737,13 @@ def synchronize(root: Path) -> dict:
                  "applied": True, "reason": "resume detected stale content-bound reviews; no prose was rewritten"}
         with (root / ".drama/invalidation-log.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(event, ensure_ascii=False) + "\n")
-    return {"phase": workflow["phase"], "writingErrors": writing_errors(root),
+    production = readiness(root)
+    if production["status"] != "ready":
+        workflow["phase"] = "awaiting_production_specs"
+    elif production["nextRequired"] == "episodePlan":
+        workflow["phase"] = "awaiting_episode_plan"
+    elif workflow["phase"] in {"awaiting_production_specs", "awaiting_episode_plan"}:
+        workflow["phase"] = "treatment_reviewed" if not gate_errors(root, "treatment") else "source"
+    save_json(root / ".drama/workflow.json", workflow)
+    return {"phase": workflow["phase"], "productionSpecs": production, "writingErrors": writing_errors(root),
             "episodes": {n: e["status"] for n, e in state.get("episodes", {}).items()}}

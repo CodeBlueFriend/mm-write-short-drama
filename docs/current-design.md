@@ -19,13 +19,33 @@
 | 近期检索后创作 | market-research | market_research | 日期、平台/地区/类型、时间窗口、指标/榜期、链接、实际读取层级与可见证据、差异。 |
 | 旧素材再创作 | source-remix | source_remix | 保留旧来源含义，不自动改标近期检索。 |
 
-生产模式仍为 `live_action / ai_drama / hybrid / unspecified`，协作模式为 `strict / assisted / automatic`。三种协作模式均不能跳过大纲人工确认。知识卡制作模式使用自身约定 `live-action / ai / hybrid / unspecified / all`，检索时按对应约定传参。
+新项目按“`live_action`真人或 `ai_drama` AI → 单集时长 → 期望集数”先取得真实用户选择。`hybrid / unspecified` 仅作旧项目和评估兼容，不满足新项目规格门；协作模式为 `strict / assisted / automatic`。三种协作模式均不能跳过大纲人工确认。知识卡制作模式使用自身约定 `live-action / ai / hybrid / unspecified / all`，检索时按对应约定传参。
 
-初始化建立 `source-evidence.json` 与连续叙述的 `03-story-treatment.md`。小说和市场入口须记录来源；读取失败要显式保留缺口，不能把宣发分析写成已通读剧本或已核热度。骨架文件存在不等于完成。
+初始化可只建启动骨架；缺选择保持 `awaiting_production_specs`，`status` 按制作方式、时长、期望集数显示当前等待项。已说清的项直接记录，不默认真人6集。三项未齐不得构思底稿、大纲，或运行 treatment/outline 审读、分集/正文。来源原始材料可先保存。
+
+规格记录于 `.drama/production-specs.json`。期望集数支持具体数或范围；实际规划总数与理由独立保存在 `.drama/episode-plan.json`（`plannedTotalEpisodes/planReason`），`state.totalEpisodes` 镜像实际数，不得冒填。实际数可合理浮动，偏离期望具体数或范围须说明剧情理由，不套固定±10%，最终随大纲人工确认。
+
+本次用户指定时长策略：真人推荐90秒，常见60—180秒、爆款常规80—120秒，新项目硬上限180秒；更长旧存量不作新项目默认。AI主流50—60秒、90秒可选，超过120秒少见但允许用户明确自定义并标非常规。不为此联网查规范，不宣称是新查到的平台法规。
+
+```bash
+python3 "$SKILL_DIR/scripts/init_project.py" "$PROJECT" --mode original
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --production-mode live_action --user-quote '用户选择真人的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --duration-seconds 90 \
+  --user-quote '用户选择90秒的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --episode-count '40-60' \
+  --user-quote '用户期望40到60集的原话' --message-ref '真实消息定位'
+```
+
+所有原话和定位示例必须替换为真实消息。范围时长用 `--duration-range A-B`；init可带 `--duration-seconds/--duration-range`、`--episode-count` 和 `--specs-user-quote/--specs-message-ref`，新增时长/集数参数无回执会拒绝初始化；旧制作方式/总数参数单独出现只作待核候选，不猜成已选。`set-plan --total-episodes 58 --reason '实际剧情理由'` 在底稿通过、完整故事规划后执行，不代表用户批准。底稿审读只绑定规格；大纲、批审、final及确认另绑定实际plan，定实际数不使已审底稿无故失效。
+
+来源登记 `source-evidence.json` 与连续叙述的 `03-story-treatment.md` 随后进入主流程。小说和市场入口须记录来源；读取失败要显式保留缺口，不能把宣发分析写成已通读剧本或已核热度。骨架文件存在不等于完成。
 
 ## 底稿、大纲与确认
 
-三入口先从开端写到结局，审查目标、必须行动的原因、失误、代价和下一步因果。底稿通过才生成完整大纲。大纲由 `04-story-bible.md` 与 `05-season-architecture.md`承载，包含连读梗概、人物变化、阶段因果、高潮结局、伏笔兑现、总集数/集长/交付范围；保留原A/B/C阶段审核作为内部细化。
+三入口先从开端写到结局，审查目标、必须行动的原因、失误、代价和下一步因果。底稿通过才生成完整大纲。大纲由 `04-story-bible.md` 与 `05-season-architecture.md`承载，包含连读梗概、人物变化、阶段因果、高潮结局、伏笔兑现、期望集数/实际规划总数/所选集长/交付范围；保留原A/B/C阶段审核作为内部细化。
 
 工作流命令为：
 
@@ -58,7 +78,9 @@ check-writing
 
 | 记录 | 用途 |
 |---|---|
-| `.drama/project-state.json` | 路由、revision、逐集状态与上游版本。 |
+| `.drama/project-state.json` | 路由、revision、逐集状态与上游版本；`state.totalEpisodes`为大纲实际总数。 |
+| `.drama/production-specs.json` | 用户选择的制作方式、时长、期望集数和真实回执，与实际总数分开。 |
+| `.drama/episode-plan.json` | `plannedTotalEpisodes/planReason`：大纲实际总数和理由；state镜像总数。 |
 | `.drama/artifact-index.json` | 产物路径、revision、状态和dependsOn。 |
 | `.drama/workflow.json` | 阶段审读、确认历史和当前等待点。 |
 | `.drama/invalidation-log.jsonl` | 上游变更导致的失效历史。 |
@@ -90,7 +112,7 @@ check-writing
 
 ## 正式Word与预览
 
-当前项目正文前必须依次有九模块：剧本名、来源、类型/短剧类型、集数、剧名寓意、热门元素、创作理由、故事梗概、主要角色。集数含全剧总量与本稿范围；内容来自已确认材料及实际交付稿。前置内容纳入final审读，禁止占位、虚构署名、样剧串入、范围断号/重复。原参考模板的字段分段仍应以私有原件实物核对，不从样剧内容填当前项目。
+当前项目正文前必须依次有九模块：剧本名、来源、类型/短剧类型、集数、剧名寓意、热门元素、创作理由、故事梗概、主要角色。集数含大纲实际规划总数与本稿范围，不能用用户期望数/范围冒填；内容来自已确认材料及实际交付稿。前置内容纳入final审读，禁止占位、虚构署名、样剧串入、范围断号/重复。原参考模板的字段分段仍应以私有原件实物核对，不从样剧内容填当前项目。
 
 正式导出要求 `--project-dir`、`--front-matter`及当前有效大纲/批审/final/语义复核，先在 `.drama/staging/`生成临时Word、核对可见正文与源稿；还未进入正式交付目录。渲染必须通过 `render_screenplay.py` 实际调用指定的bundled文档渲染器，生成PDF、完整页图及绑定输入Word/渲染器/PDF/页图摘要、实际命令、真实PDF页数和图像尺寸的manifest。已有目录不能补认证。随后逐页实际检查，QA中的 `renderManifest` 必须指向包装器本次生成的文件，`renderDirectory` 指向同目录。发布重新核验manifest、真实PDF页数、每页PNG尺寸及摘要，不能只信QA自报docxHash；1×1占位图、缺页和旧来源均拒绝。使用 `--publish ... --visual-qa ...`最终写正式文件。重试不能覆盖已交付合格文件，任何输入变化须重新验收。
 
@@ -114,4 +136,4 @@ python3 mm-write-short-drama/evals/test_p0.py
 python3 tests/validate_seeded_knowledge.py
 ```
 
-测试隔离用户项目与私人库，验证三入口、确认/退改/重启、版本失效、实读覆盖、阻断、润色保护、知识迁移、前置和暂存/发布行为。真实旧稿盲读、陌生样本与固定条件匿名A/B另存实稿和条件，如未运行明确列未完成。机器记录不能证明创作判断正确，也不能从现存安装位置倒推历史调用。
+测试隔离用户项目与私人库，验证规格顺序、缺项阻断、期望/实际分离、三入口、确认/退改/重启、版本失效、实读覆盖、阻断、润色保护、知识迁移、前置和暂存/发布行为。真实旧稿盲读、陌生样本与固定条件匿名A/B另存实稿和条件，如未运行明确列未完成。机器记录不能证明创作判断正确，也不能从现存安装位置倒推历史调用。

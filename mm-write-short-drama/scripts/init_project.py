@@ -9,6 +9,8 @@ import json
 import shutil
 from pathlib import Path
 
+from production_specs import PLAN, SPECS, apply_choices, empty_plan, empty_specs
+
 
 CSV_HEADERS = {
     "timeline.csv": "event_id,date,start_time,end_time,event,location,participants,duration,source_episode,source_scene,depends_on,status\n",
@@ -35,7 +37,9 @@ def write_json(path: Path, value: dict) -> None:
 
 def artifact_specs(source_mode: str, through: str) -> dict[str, dict]:
     specs: dict[str, dict] = {
-        "projectBrief": {"path": "00-project-brief.md", "dependsOn": []},
+        "productionSpecs": {"path": SPECS, "dependsOn": []},
+        "episodePlan": {"path": PLAN, "dependsOn": [SPECS]},
+        "projectBrief": {"path": "00-project-brief.md", "dependsOn": [SPECS]},
         "sourceEvidence": {"path": "source-evidence.json", "dependsOn": ["00-project-brief.md"]},
         "canon": {"path": "continuity/canon.yaml", "dependsOn": ["00-project-brief.md"]},
         "lockedDecisions": {"path": "locked-decisions.md", "dependsOn": []},
@@ -56,7 +60,7 @@ def artifact_specs(source_mode: str, through: str) -> dict[str, dict]:
         specs["storyTreatment"] = {"path": "03-story-treatment.md", "dependsOn": story_deps + ["source-evidence.json"]}
         specs["storyBible"] = {"path": "04-story-bible.md", "dependsOn": ["03-story-treatment.md"]}
     if through == "full":
-        specs["seasonArchitecture"] = {"path": "05-season-architecture.md", "dependsOn": ["04-story-bible.md"]}
+        specs["seasonArchitecture"] = {"path": "05-season-architecture.md", "dependsOn": ["04-story-bible.md", PLAN]}
         specs["episodeMatrix"] = {"path": "06-episode-matrix.csv", "dependsOn": ["04-story-bible.md", "05-season-architecture.md"]}
         for name in CSV_HEADERS:
             key = "continuity_" + name.removesuffix(".csv").replace("-", "_")
@@ -74,7 +78,13 @@ def main() -> int:
     parser.add_argument("--review-mode", choices=("strict", "assisted", "automatic"), default="strict")
     parser.add_argument("--language", default="zh-CN")
     parser.add_argument("--target-market", action="append", default=[], help="Repeat for multiple markets")
-    parser.add_argument("--total-episodes", type=int)
+    parser.add_argument("--total-episodes", type=int, help="Legacy candidate only; record the actual outline total with workflow set-plan")
+    duration = parser.add_mutually_exclusive_group()
+    duration.add_argument("--duration-seconds", type=int)
+    duration.add_argument("--duration-range", help="Single-episode range in seconds, e.g. 50-60")
+    parser.add_argument("--episode-count", help="Flexible creator preference, e.g. 60, 约60集, or 40-60")
+    parser.add_argument("--specs-user-quote")
+    parser.add_argument("--specs-message-ref")
     parser.add_argument(
         "--through",
         choices=("brief", "story-bible", "full"),
@@ -85,6 +95,21 @@ def main() -> int:
     if args.total_episodes is not None and args.total_episodes < 1:
         parser.error("--total-episodes must be positive")
     source_mode = args.mode.replace("-", "_")
+
+    # Legacy mode/count flags alone are candidates, never user confirmation.
+    production = empty_specs()
+    if args.specs_user_quote is not None or args.specs_message_ref is not None:
+        try:
+            production = apply_choices(production,
+                production_mode=args.production_mode if args.production_mode != "unspecified" else None,
+                duration_seconds=args.duration_seconds, duration_range=args.duration_range,
+                episode_count=args.episode_count, user_quote=args.specs_user_quote or "",
+                message_ref=args.specs_message_ref or "")
+        except ValueError as exc:
+            parser.error(str(exc))
+    elif any(v is not None for v in (args.duration_seconds, args.duration_range, args.episode_count)):
+        parser.error("production choices require --specs-user-quote and --specs-message-ref")
+    selected_mode = production["productionMode"] or "unspecified"
 
     root = args.project_dir.expanduser().resolve()
     if root.exists() and any(root.iterdir()):
@@ -122,7 +147,7 @@ def main() -> int:
 
     canon = (
         'schemaVersion: "1.0.0"\nproject:\n  title: ""\n'
-        f'  sourceMode: "{source_mode}"\n  productionMode: "{args.production_mode}"\n'
+        f'  sourceMode: "{source_mode}"\n  productionMode: "{selected_mode}"\n'
         f'  orientation: "{args.orientation}"\n  status: draft\n'
         "immutable_facts: []\nconfirmed_facts: []\ncurrent_plans: []\ndiscarded: []\n"
     )
@@ -149,17 +174,19 @@ def main() -> int:
     project_id = "drama-" + hashlib.sha256(root.name.encode("utf-8")).hexdigest()[:12]
     write_json(root / ".drama" / "project-state.json", {
         "schemaVersion": "1.0.0", "projectId": project_id, "projectRevision": 1,
-        "sourceMode": source_mode, "productionMode": args.production_mode,
+        "sourceMode": source_mode, "productionMode": selected_mode,
         "orientation": args.orientation, "deliveryScope": args.delivery_scope,
         "reviewMode": args.review_mode, "language": args.language,
         "targetMarkets": args.target_market, "platformProfiles": [],
-        "currentPhase": "brief", "totalEpisodes": args.total_episodes,
+        "currentPhase": "brief", "totalEpisodes": None,
         "lockedDecisionsRevision": 0, "artifacts": state_artifacts, "episodes": {}
     })
     write_json(root / ".drama" / "artifact-index.json", {"schemaVersion": "1.0.0", "projectRevision": 1, "artifacts": indexed})
+    write_json(root / SPECS, production)
+    write_json(root / PLAN, empty_plan())
     write_new(root / ".drama" / "invalidation-log.jsonl", "")
     write_json(root / ".drama/workflow.json", {
-        "schemaVersion": "1.0.0", "phase": "source", "reviews": [],
+        "schemaVersion": "1.0.0", "phase": "awaiting_production_specs" if any(production[f] is None for f in ("productionMode", "duration", "episodeCountPreference")) else "source", "reviews": [],
         "outlineConfirmation": None, "confirmationHistory": [], "events": [],
     })
     write_json(root / ".humanizer" / "policy.json", {
