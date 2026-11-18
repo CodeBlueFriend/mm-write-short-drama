@@ -38,7 +38,17 @@ Git 标签用于复现对应版本；升级到新版时只替换 Skill 本体，
 
 ## 安装
 
-### 方法一：安装稳定版 v1.2.0
+### 在 Codex 中安装技能
+
+将这条指令粘贴到 Codex，即可从 GitHub 安装稳定版。
+
+```text
+$skill-installer 从 https://github.com/CodeBlueFriend/mm-write-short-drama/tree/v1.2.0/mm-write-short-drama 安装技能
+```
+
+安装后在 Codex 中输入 `$mm-write-short-drama` 开始使用。如果技能列表还没有显示，重启 Codex 后再试。[Codex 技能文档](https://developers.openai.com/codex/skills#install-curated-skills-for-local-use)
+
+### 从 GitHub 手动安装 v1.2.0
 
 ```bash
 SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
@@ -55,7 +65,7 @@ cp -R /tmp/mm-write-short-drama-repo/mm-write-short-drama/. "$SKILLS_DIR/mm-writ
 
 `knowledge-base/` 不复制进 Skill 安装目录。把它保留在长期工作区，并在项目启动单填写绝对路径或仓库相对路径。以后升级 `mm-write-short-drama/` 时不会覆盖个人知识。
 
-### 方法二：从本地仓库安装
+### 从本地仓库安装
 
 ```bash
 SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
