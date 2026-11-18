@@ -1,6 +1,6 @@
-# 当前开发版设计
+# v1.2 工作流设计
 
-本文对应 2026-11-18 的 `Unreleased` 源码，说明当前实现及其边界。`VERSION` 仍为 `1.1.0`；本文不代表新的稳定版发布。历史设计保留在 [v1.1 知识库设计](knowledge-base-design-v1.1.md) 和 [版本说明](versions/v1.1.md) 中。
+本文记录 v1.2.0 的实现与兼容范围。安装和升级步骤见 [v1.2 功能与升级说明](versions/v1.2.md)。历史设计保留在 [v1.1 知识库设计](knowledge-base-design-v1.1.md) 和 [版本说明](versions/v1.1.md) 中。
 
 ## 源码与数据边界
 

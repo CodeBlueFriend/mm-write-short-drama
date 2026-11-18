@@ -1,6 +1,6 @@
 # mm-write-short-drama（短剧编剧 Codex Skill）
 
-一个面向长流程短剧创作的 Codex Skill。它支持原创与小说/故事改编，通过故事圣经、整季结构、分集矩阵、场次卡、连续性账本和证据化审核，生成上下文连贯、人物稳定、可表演、可制作的短剧剧本。当前开发版在 v1.1 个人知识库基础上增加版本化项目状态、依赖失效传播、五项写作能力检索和批次合并 Word 交付。
+一个面向长流程短剧创作的 Codex Skill。它支持原创与小说/故事改编，通过故事圣经、整季结构、分集矩阵、场次卡、连续性账本和证据化审核，生成上下文连贯、人物稳定、可表演、可制作的短剧剧本。v1.2.0 在 v1.1 个人知识库基础上增加版本化项目状态、依赖失效传播、五项写作能力检索和批次合并 Word 交付。
 
 它不会一次性盲写整季，也不负责分镜、图片/视频提示词、剪辑或发布。首版交付边界是“可进入制片或分镜环节的定稿剧本”。
 
@@ -20,16 +20,17 @@
 - 按基础模板把本批全部集数合并为一个 Word，只继承模板格式，支持当前项目已审核的可选前置信息；
 - 评估真人拍摄、AI 真人剧、AI 漫剧或混合制作风险。
 
-当前源码入口、状态机、依赖、交付门和安装边界见 [当前开发版设计](docs/current-design.md)。历史知识库架构、流程图和原创/改编示例保留在 [v1.1 个人编剧知识库系统设计](docs/knowledge-base-design-v1.1.md)。
+当前源码入口、状态机、依赖、交付门和安装边界见 [v1.2 设计](docs/current-design.md)。历史知识库架构、流程图和原创/改编示例保留在 [v1.1 个人编剧知识库系统设计](docs/knowledge-base-design-v1.1.md)。
 
 公开源码只分发流程、程序、通用模板、设计和测试，不包含用户项目剧本、原参考剧本正文或私人知识资料。个人项目与知识库新增内容留在用户工作区。
 
 ## 版本与升级记录
 
-当前稳定版本和 `VERSION` 仍为 `v1.1.0`；仓库当前源码包含 `Unreleased` 开发更新，尚未发布新的稳定版。需要复现稳定版时使用对应 Git 标签。仓库同时保留每个正式版本的功能介绍、安装方式、使用命令和能力边界：
+当前稳定版本为 `v1.2.0`。各版本的功能、安装方式和兼容范围见对应说明。
 
 - [全部升级记录](CHANGELOG.md)
-- [当前开发版设计与兼容边界](docs/current-design.md)
+- [v1.2 功能与升级说明](docs/versions/v1.2.md)
+- [v1.2 设计与兼容边界](docs/current-design.md)
 - [v1.1 功能与使用说明](docs/versions/v1.1.md)
 - [v1.0 功能与使用说明](docs/versions/v1.0.md)
 
@@ -37,24 +38,15 @@ Git 标签用于复现对应版本；升级到新版时只替换 Skill 本体，
 
 ## 安装
 
-### 方法一：安装当前开发版
-
-开发更新位于 `codex/v1.1-knowledge-base` 分支；远程默认 `main` 仍为 v1.1.0，安装当前文档描述的新能力时需明确指定开发分支：
+### 方法一：安装稳定版 v1.2.0
 
 ```bash
 SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
 mkdir -p "$SKILLS_DIR"
-git clone --branch codex/v1.1-knowledge-base \
+git clone --branch v1.2.0 \
   https://github.com/CodeBlueFriend/mm-write-short-drama.git /tmp/mm-write-short-drama-repo
 mkdir -p "$SKILLS_DIR/mm-write-short-drama"
 cp -R /tmp/mm-write-short-drama-repo/mm-write-short-drama/. "$SKILLS_DIR/mm-write-short-drama/"
-```
-
-若要安装稳定版，把上面的 `git clone` 命令替换为以下命令，并按 [v1.1 说明](docs/versions/v1.1.md) 使用其功能：
-
-```bash
-git clone --branch v1.1.0 \
-  https://github.com/CodeBlueFriend/mm-write-short-drama.git /tmp/mm-write-short-drama-repo
 ```
 
 重新打开 Codex 或启动一个新任务，让 Skill 列表刷新。看到“短剧编剧”即安装成功。
@@ -235,7 +227,7 @@ python3 mm-write-short-drama/scripts/search_knowledge.py \
 
 默认只返回 `active`。当前项目明确要求和锁定事实始终优先；`pending-conflict` 不会被调用。
 
-当前开发版支持在语义诊断后用 `--capability <原能力ID>` 精确补查；卡片保留 `source_note / source_url / source_verification` 等来源字段。五项能力入口、ID 和核验边界见 [当前设计](docs/current-design.md#五项写作能力与知识来源)。能力接口不表示仓库附带对应书籍全文或已审核私人卡。
+v1.2.0 支持在语义诊断后用 `--capability <原能力ID>` 精确补查；卡片保留 `source_note / source_url / source_verification` 等来源字段。五项能力入口、ID 和核验边界见 [当前设计](docs/current-design.md#五项写作能力与知识来源)。能力接口不表示仓库附带对应书籍全文或已审核私人卡。
 
 ### 校验知识库
 
@@ -415,7 +407,7 @@ python3 "$SKILL_DIR/scripts/screenplay_stats.py" ./projects/my-drama/episodes --
 
 审核固定从上游到下游：结构因果 → 原著忠实（改编）→ 人物动机/信息 → 连续性 → 节奏 → 去 AI 味 → 制作 → 格式。每个问题必须带位置、证据、等级、影响和修法。
 
-当前开发版使用 P0–P3 和结构化问题单。交付要求 P0 清零，P1 修复或有明确接受记录；锁定事实冲突、角色提前获知、关键道具和时间线断裂必须为 0。重大改编全部记录，每场有戏剧功能；评分不能抵消阻断问题。审核默认只报告，收到修复指令后才改稿。
+v1.2.0 使用 P0–P3 和结构化问题单。交付要求 P0 清零，P1 修复或有明确接受记录；锁定事实冲突、角色提前获知、关键道具和时间线断裂必须为 0。重大改编全部记录，每场有戏剧功能；评分不能抵消阻断问题。审核默认只报告，收到修复指令后才改稿。
 
 ## 仓库结构
 
