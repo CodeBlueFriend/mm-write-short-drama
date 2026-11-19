@@ -7,7 +7,15 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 把聊天视为协作界面，把项目文件视为唯一事实源。按“先决策、后扩写；先结构、后措辞；局部返修优先”的顺序工作，交付可进入制片或分镜环节的剧本。
 
-## 启动任务
+## 先识别这次要交的稿
+
+用户说“只试写一场”“看看这个开头”“这几句太假了”或给出一段让你改时，走试戏或局改入口。读用户给的文字；涉及已有项目时，只补读与这场有关的已锁事实、人物知情边界和上场结尾。按 [主笔写戏](references/lead-writer.md) 直接交候选场次或修改段落，沿用用户原稿格式；无需先收齐正式项目规格。此入口在项目初始化、全套知识检索、状态迁移、正式稿润色登记和 Word 导出之前返回，不改项目状态或锁定事实。用户采纳后，才按正式项目的确认与审核流程并入。用户说“只审核这一场”时，交有原文依据的诊断，等用户要求改写再改。
+
+正式项目沿用下列规格选择与状态机：先取得真实选择，按来源讲通完整故事、审读底稿和大纲，等创作者明确确认当前版本，再分批写正文。自动推进同样不能代替这次确认；大纲实质变更须重新确认。用户单独要求试戏时可并行提供候选片段，不能将试稿记成已批准的正式正文。
+
+正式项目进入正文时也使用 [主笔写戏](references/lead-writer.md)。默认由本轮模型主笔，主会话负责上下文、审稿与交付。用户选择独立主笔时，实际委派项目配置的 `drama_writer`；单次试戏也可明确启用。配置加载位置与返修交接见同一指南。
+
+## 启动正式项目
 
 1. 检查工作区是否已有短剧项目文件。续作时先读取 `.drama/project-state.json`、`.drama/artifact-index.json`、`00-project-brief.md`、`locked-decisions.md`、当前任务依赖的上游产物、相关连续性账本和最新变更记录，不凭聊天记忆续写。缺少新版状态文件的旧项目可继续只读处理；整季续作前先说明并迁移，不猜测状态。只改用户提供的局部文本时，从稿件摘取必要事实并限定范围，不以全项目迁移阻塞改稿。
 2. 新项目按顺序推进：AI或真人 → 创作来源 → 题材等需求 → 单集时长 → 期望集数（具体数或范围，允许按故事合理浮动）。用户已明确的选择直接记录，不重复问；制作方式未选时首问必须是AI或真人，选完立即问创作来源，不能先问来源或题材；未齐前只建空骨架/启动单、保存原始素材，不构思故事底稿、大纲或分集，绝不默认真人6集。按 [production-modes.md](references/production-modes.md) 展示本次固定时长策略，不为此上网查平台规范。
@@ -18,12 +26,12 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 ## 选择路线与资源
 
-- 所有项目：读取 [workflow.md](references/workflow.md)。新项目先读 [制作方式与规格](references/production-modes.md)，规格齐全后再读 [创作来源与故事底稿](references/source-intake.md)；恢复先运行 `scripts/workflow.py PROJECT status`，显示制作方式、创作来源、时长或集数中的当前等待点。
+- 正式项目：读取 [workflow.md](references/workflow.md)。新项目先读 [制作方式与规格](references/production-modes.md)，规格齐全后再读 [创作来源与故事底稿](references/source-intake.md)；恢复先运行 `scripts/workflow.py PROJECT status`，显示制作方式、创作来源、时长或集数中的当前等待点。试戏、局改和只审核按前述入口限定范围。
 - 状态恢复、单集迁移、上游修改或失效传播：读取 [project-state.md](references/project-state.md)。
 - 原创发现：再读取 [original-creation.md](references/original-creation.md)。
 - 小说或素材改编：再读取 [adaptation.md](references/adaptation.md)；先运行 `scripts/index_source.py` 建索引。
 - 故事圣经、整季结构、分集矩阵：读取 [story-structure.md](references/story-structure.md)。
-- 场次卡、角色推演、剧本和对白：读取 [scene-and-dialogue.md](references/scene-and-dialogue.md)。
+- 场次卡、角色推演、剧本和对白：读取 [scene-and-dialogue.md](references/scene-and-dialogue.md)；落笔与主笔交接使用 [lead-writer.md](references/lead-writer.md)。
 - 续写、跨集修改或审核：读取 [continuity.md](references/continuity.md)，必要时运行 `scripts/build_context_pack.py`。
 - 去 AI 味或台词改写：读取 [anti-ai-style.md](references/anti-ai-style.md)。
 - 真人/AI制作风险或旧混合项目评估：读取 [production-modes.md](references/production-modes.md)。
@@ -35,7 +43,7 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 五书方法从落笔前参与底稿、大纲、分集、场次与对白；《故事》通常每个子任务选1张，跨域最多2张，可随阶段换卡。日常梗概、结构、秘密揭露、相邻集卡点、对白改稿，以及“教我写/给我练一题”，先按 [五书写作能力](references/writing-capabilities.md) 从原文证据定位问题，再用下述检索入口选已启用卡。用户无需指定书名。局部任务先交范围内可用稿，纯润色不改锁定剧情，无隐瞒驱动的戏跳过秘密方法；教学才采用诊断、示范、复练。书籍原则、公开目录主题与交接包项目实践分开归属，不将检索命中或材料存在报告成已应用或已核全文。
 
-在开始生成当前阶段产物前运行 `scripts/search_knowledge.py`，只装配匹配任务的少量 `active` 卡片：
+正式项目在开始生成当前阶段产物前运行 `scripts/search_knowledge.py`，只装配匹配任务的少量 `active` 卡片；试戏按主笔指南遇到具体难题再取相关卡，不强制检索：
 
 - 故事发现、故事圣经：`--stage planning`；
 - 整季结构：`--stage structure`；
@@ -49,7 +57,7 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 ## 执行状态机
 
-按以下顺序推进；若用户只请求某一阶段，仍先验证它依赖的上游文件：
+正式项目按以下顺序推进；若用户只请求某一正式阶段，仍先验证它依赖的上游文件。独立试戏与局改使用前述候选稿入口：
 
 1. 输出并保存项目启动单与规格回执，恢复当前等待点；制作方式、创作来源、单集时长和期望集数是新项目起草的前置阻断项。四项未齐不得运行 treatment/outline 审读或写分集、正文。其他非阻断选择可作为 L2/待确认草案写到用户指定阶段；完成与否以文件、状态和校验结果为准。
 2. 按已选来源读取已有素材/原始创意/实际近期热门剧本检索证据，保存 `source-evidence.json`；旧素材来源标记保留。三路均先完成 `03-story-treatment.md`，实际读完底稿、审因果动机与来源，修好再过 `workflow.py ... --stage treatment`。
@@ -77,7 +85,7 @@ description: 分阶段创建、改编、续写、审核和去 AI 味短剧剧本
 
 ## 审核与交付
 
-原有结构与事实审查通过后，按 [Humanizer 适配规则](references/humanizer-adapter.md) 默认只定位和修改有表达问题的具体台词或动作，保存原稿和差异；优质原文可原样通过，项目可选择关闭改写。一个项目只选一个执行改写的位置，记录实际调用链，避免外部与内置门重复全量润色。金额、责任人、日期、否定、条件、时间和承诺须逐处核对。结构缺口退回上游，不能靠润色补设定。
+以下用于正式稿，试戏与局改按前述候选稿入口返回。原有结构与事实审查通过后，按 [Humanizer 适配规则](references/humanizer-adapter.md) 默认只定位和修改有表达问题的具体台词或动作，保存原稿和差异；优质原文可原样通过，项目可选择关闭改写。独立主笔稿把具体问题送回同一主笔修订，主会话不再合写一版。一个项目只选一个执行改写的位置，记录实际调用链，避免外部与内置门重复全量润色。金额、责任人、日期、否定、条件、时间和承诺须逐处核对。结构缺口退回上游，不能靠润色补设定。
 
 用内置 `scripts/polish_guard.py` 留下逐差异复核与当前正文哈希。程序的敏感词差异检查只是保守信号，实际语义由编审读前后稿及关联集核对；未经批准的语义变化恢复原句或返修。编辑后在实际最终正文再审，批次/全稿报告绑定全部当前依赖与覆盖。外部 Humanizer 可选择使用，但不得跳过最终语义复核；缺少外部技能不阻止选择关闭改写的项目完成内置流程。
 
