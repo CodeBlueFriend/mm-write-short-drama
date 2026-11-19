@@ -1,8 +1,8 @@
-# 五项写作能力与练习入口
+# 五书方法与写作入口
 
-本文件定义项目调用接口，不代表四本书完整正文已获核验。按需求和稿件证据挑方法，不要求用户报书名。书籍归属与可见范围以检索卡中的 source_note、source_verification 为准；目录主题不能作为具体方法的原书依据，交接包的操作步骤和示例须标为短剧适配/项目实践。
+本文件定义项目调用接口。随包提供前四书5张方法卡和麦基《故事》19张能力摘要，不代表五本书完整正文已由本机重新核验。按当前要写的戏选方法，不要求用户报书名。书籍归属与可见范围以检索卡中的 source_note、source_verification 为准；目录主题不能作为具体方法的原书依据，交接包的操作步骤和示例须标为短剧适配/项目实践。
 
-随技能提供已核验的三张内置卡，分别用于一句梗概、整季节拍和对白中的言语行动。卡内注明公开出处，执行步骤和示例为短剧适配。其余入口沿用项目工作流及经核验的个人卡。
+旧版三张公开内置卡保留在 `assets/builtin-knowledge/cards/`，分别用于一句梗概、整季节拍和对白中的言语行动。当前检索在任务与范围匹配后优先采用个人 active 卡，再选24张当前摘要，旧三张卡仅作兼容兜底；不重复加载同能力。卡内注明公开出处，执行步骤和示例为短剧适配。
 
 ## 选择方法
 
@@ -18,6 +18,44 @@
 
 先用自然语言问题做 search_knowledge.py 的任务查询并传入阶段/题材/制作形式。已确定能力但自然语言未命中时，可用 `--capability <原ID>` 和空查询精确检索，仍只取 active，检查卡例外后再用。这是语义诊断后的补查，不按关键词强制启动。`draft` 只供显式审核，不用它生成用户稿件。
 
+## 《故事》19项的使用位置
+
+以下能力ID统一加前缀 `cap.mckee-story-short-drama.`。按固定输入中阶段字段检索；不能因为表格列出某个用途而擅自扩展阶段。每个子任务通常用1张，明确跨域最多2张；不同阶段可换卡。默认 context 输出含完整执行动作，不能只把规则标题交给写作者。
+
+| 编号/上游修订 | 能力后缀 | 可检索阶段 | 写进产物的结果 |
+|---|---|---|---|
+| 01 / 2 | expectation-gap | scene, episode, review | 主角目标、预期反应、实际结果及由此改变的下一行动。 |
+| 02 / 2 | inciting-incident | planning, structure, episode, review | 打破日常的事件、主角得知时机、由此产生的追求。 |
+| 03 / 2 | progressive-complications | structure, episode, review | 失败取消的旧办法、新代价与不得不换的策略。 |
+| 04 / 2 | scene-analysis | scene, dialogue, review | 开场处境、行动反应节拍、转折动作、离场后的变化。 |
+| 05 / 2 | crisis-choice | structure, scene, review | 两条可选路及代价；处理能轻易两全的漏洞。 |
+| 06 / 2 | climax-payoff | structure, review | 结局可见行动及其前置能力、信息和条件。 |
+| 07 / 1 | story-form | planning, structure, review | 驱动者、因果、时间和结局开放程度的明确选择。 |
+| 08 / 1 | setting-research | planning, structure, scene, review | 时间地点资源限制；专业事实区分已核与待查。 |
+| 09 / 1 | genre-contract | planning, structure, review | 题材承诺、必需场面和本项目的变化。 |
+| 10 / 1 | character-pressure | planning, structure, scene, review | 有代价的选择及人物在不同关系中的矛盾。 |
+| 11 / 1 | controlling-idea | planning, structure, review | 价值如何因行动变化，反向力量怎样获得表现。 |
+| 12 / 1 | setup-payoff | structure, episode, scene, review | 关键揭露所需的前置线索及当时用途。 |
+| 13 / 1 | composition-rhythm | structure, episode, review | 场长、内部活动、主线压力各自的调整；保留有效静场。 |
+| 14 / 1 | antagonism-depth | planning, structure, review | 对关键价值的新威胁及它迫使主角改变的行动。 |
+| 15 / 1 | dramatized-exposition | scene, dialogue, review | 必要信息及角色此刻展示它的理由。 |
+| 16 / 1 | audience-information | structure, episode, scene, review | 观众与人物各自知道的事实、追问或担忧及可见依据。 |
+| 17 / 1 | screen-action | scene, dialogue, review | 抽象心理对应的动作、物件、声音和变化。 |
+| 18 / 1 | inside-out-workflow | planning, structure, episode, scene, dialogue, review | 先检验事件与结尾，再扩展动作潜文本对白；缺口退回相应层。 |
+| 19 / 1 | adaptation-recreation | adaptation, structure, scene, review | 原作事件时间序、核心体验、可拍场次与删改影响；怀疑保留为怀疑。 |
+
+来源固定于 [五书交接提交](https://github.com/CodeBlueFriend/short-drama-book-skills/tree/6e99009572a64f99d60134405fbf1cf200b0dfe4)。译本为周铁东译、天津人民出版社2014年9月第1版、ISBN 9787201088334。原文件与导入稿摘要分开保存，章/节/电子段号可回查，纸本页码与全文校勘仍待核。安装即可用随包卡，个人适用卡优先，导入与迁移见 [knowledge-base.md](knowledge-base.md)。独立顾问 Skill 的 [上游入口](https://github.com/CodeBlueFriend/short-drama-book-skills/blob/6e99009572a64f99d60134405fbf1cf200b0dfe4/skills/mckee-story-short-drama/SKILL.md) 保持可用；普通创作不要求同时加载五个独立入口。
+
+## 从第一次构思到对白
+
+三种来源都在写故事底稿前查询 planning，用一句梗概和激励事件定位“谁必须在此刻做什么”。小说改编还查 adaptation，先保留原著证据强度；近期研究先保留真实来源与可见范围。主编剧持有全剧，顾问收到本阶段要写的戏、锁定事实、上游决定、题材与制作约束，以及少量完整卡片。顾问交付可写入底稿的转折、分场动作或对白，主编剧选用、合并或跳过并说明实际取舍。
+
+初创大纲记录重要转折的前因、可选路、选择和失去/得到的条件。人物分集记录知情范围和集间承接。场次先写双方想让对方做什么、哪一行动迫使对方换策略，再落到对白。只给影响后续的决定设稳定ID，在大纲、分集、场次、审稿中沿用；续写读取同一决定及其依赖，不能为换批次重新发明理由。
+
+例如合成故事《修钟的人》：大纲选择“修表师为保住亡父留下的店，愿意补齐旧站那一夜的交接记录，代价是错过拆迁补偿的签字期”。分集让她先发现录音只证实车辆到过、无法证明父亲在场；场次中她不拿怀疑质问母亲，而故意报错旧站门牌，母亲的纠正才改变她下一步查证方向。对白不把未证实记忆写成客观闪回。这个例子是方法链的写法示范，不能当作已经完成盲读或质量提升的证据。
+
+记录可采用 `assets/method-decision-template.json` 的最小字段：方法卡与两种版本、输入问题、采纳/跳过理由、上游决定、落稿位置及下一步验证。正式Word不装入这些方法记录。重要结构修改仍使旧大纲确认失效，不能借方法调用绕过人工确认。
+
 ## 范围与连续性
 
 读取本轮涉及的身份、目标、关系、时间、秘密、人物/观众认知、伏笔、兑现点、集长与制作限制。有账本则复用，没有则从当前稿摘取最低必要事实，不要求局部修台词先建立整季工程，也不自动迁移旧项目。
@@ -26,7 +64,7 @@
 
 轻喜剧合作、无隐瞒驱动的戏，不为了调用秘密卡制造秘密；只顺已经确认的台词，不改转折/身份/集尾兑现。即使场景有秘密，也不意味着纯措辞任务需要改揭露结构。无适用卡时回到原流程。
 
-正常写作先交可替换正文。编审默认“原文证据→判断→可执行改法→短示范”，不得把整稿返修当默认授权。已有版本质量足够则保留，不为展示方法强改。剧本 Word 合并、Humanizer、原有审核门保持不变。
+正常写作先交可替换正文。编审默认“原文证据→判断→可执行改法→短示范”，不得把整稿返修当默认授权。已有版本质量足够则保留，不为展示方法强改。剧本 Word 合并、润色和最终正文审稿执行当前交付流程；检索器不替代读稿或大纲人工确认。
 
 ## 教学复练
 

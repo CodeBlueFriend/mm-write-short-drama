@@ -36,6 +36,9 @@ FIELD_MAP = {
     "来源": "source_note",
     "来源链接": "source_url",
     "仓颉能力 ID": "capability_id",
+    "能力修订": "capability_revision",
+    "源文件SHA256": "original_source_sha256",
+    "来源提交": "source_commit",
     "触发": "triggers",
     "诊断": "diagnosis",
     "动作": "action",
@@ -152,7 +155,7 @@ def make_card(candidate: dict[str, Any], source: dict[str, str], args: argparse.
     priority = str(args.priority or candidate.get("priority") or "experimental")
     status = str(args.status)
     card_id = make_id(category, rule)
-    return {
+    card = {
         "id": card_id,
         "title": str(args.title or candidate.get("title") or title_from_rule(rule)),
         "rule": rule,
@@ -168,13 +171,17 @@ def make_card(candidate: dict[str, Any], source: dict[str, str], args: argparse.
         "source": source,
         **{key: candidate[key] for key in (
             "source_note", "source_url", "capability_id", "triggers", "diagnosis",
-            "action", "output_contract", "self_check", "adaptation", "source_verification"
+            "action", "output_contract", "self_check", "adaptation", "source_verification",
+            "capability_revision", "original_source_sha256", "source_commit"
         ) if candidate.get(key)},
         "status": status,
         "version": 1,
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
+    if "capability_revision" in card:
+        card["capability_revision"] = int(card["capability_revision"])
+    return card
 
 
 def resolve_conflict(root: Path, conflict_id: str, decision: str, note: str) -> int:

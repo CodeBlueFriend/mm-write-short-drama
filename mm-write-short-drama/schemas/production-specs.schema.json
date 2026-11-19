@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mm-write-short-drama/schemas/production-specs.schema.json",
+  "title": "User-selected production specifications",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policyVersion", "productionMode", "sourceMode", "duration", "episodeCountPreference", "selections"],
+  "properties": {
+    "schemaVersion": {"const": "1.0.0"},
+    "policyVersion": {"const": "2026-11-18.user-v1"},
+    "productionMode": {"enum": [null, "live_action", "ai_drama"]},
+    "sourceMode": {"enum": [null, "original", "adaptation", "market_research", "source_remix"]},
+    "duration": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["minSeconds", "maxSeconds", "targetSeconds", "classification"],
+          "properties": {
+            "minSeconds": {"type": "integer", "minimum": 1},
+            "maxSeconds": {"type": "integer", "minimum": 1},
+            "targetSeconds": {"type": ["integer", "null"], "minimum": 1},
+            "classification": {"enum": ["standard", "custom", "unconventional"]}
+          }
+        }
+      ]
+    },
+    "episodeCountPreference": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "raw", "target", "min", "max", "flexible"],
+          "properties": {
+            "kind": {"enum": ["target", "range"]},
+            "raw": {"type": "string", "minLength": 1},
+            "target": {"type": ["integer", "null"], "minimum": 1},
+            "min": {"type": ["integer", "null"], "minimum": 1},
+            "max": {"type": ["integer", "null"], "minimum": 1},
+            "flexible": {"const": true}
+          }
+        }
+      ]
+    },
+    "selections": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "productionMode": {"$ref": "#/$defs/receipt"},
+        "sourceMode": {"$ref": "#/$defs/receipt"},
+        "duration": {"$ref": "#/$defs/receipt"},
+        "episodeCountPreference": {"$ref": "#/$defs/receipt"}
+      }
+    }
+  },
+  "$defs": {
+    "receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["value", "userQuote", "messageRef", "selectedAt"],
+      "properties": {
+        "value": {},
+        "userQuote": {"type": "string", "minLength": 1},
+        "messageRef": {"type": "string", "minLength": 1},
+        "selectedAt": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}

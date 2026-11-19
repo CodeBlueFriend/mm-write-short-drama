@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "policyVersion": "2026-11-18.user-v1",
+  "policySource": "Creator-provided workflow policy, fixed until explicitly updated; not a claim about current law or every platform.",
+  "profiles": {
+    "live_action": {
+      "label": "真人短剧",
+      "recommendedSeconds": 90,
+      "commonRangeSeconds": [60, 180],
+      "hitRangeSeconds": [80, 120],
+      "hardMaxSeconds": 180,
+      "note": "新项目不超过3分钟；历史存量剧偶有超长，不作为新项目默认例外。"
+    },
+    "ai_drama": {
+      "label": "AI漫剧（AI剧）",
+      "recommendedSeconds": 60,
+      "commonRangeSeconds": [50, 60],
+      "optionalSeconds": [90],
+      "unconventionalAboveSeconds": 120,
+      "note": "主流50—60秒，部分约90秒，很少超过2分钟；明确选择的更长时长保留为非常规方案。"
+    }
+  }
+}

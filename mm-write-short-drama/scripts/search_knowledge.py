@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Search approved built-in and personal screenwriting cards by task."""
+"""Search approved personal, bundled, and legacy screenwriting cards by task."""
 
 from __future__ import annotations
 
@@ -8,29 +8,34 @@ import json
 from pathlib import Path
 from typing import Any
 
-from knowledge_lib import iter_cards, list_value, load_jsonl, rebuild_index, resolve_kb, tokenize
+from knowledge_lib import BUILTIN_KB, iter_cards, list_value, rebuild_index, search_roots, tokenize
 
 
 PRIORITY_SCORE = {"hard": 4.0, "preferred": 3.0, "optional": 2.0, "experimental": 1.0}
-BUILTIN_ROOT = Path(__file__).resolve().parents[1] / "assets" / "builtin-knowledge"
+LEGACY_BUILTIN_ROOT = Path(__file__).resolve().parents[1] / "assets" / "builtin-knowledge"
 
 
-def load_cards(kb: Path | None, rebuild: bool) -> list[dict[str, Any]]:
-    cards = []
-    for card in iter_cards(BUILTIN_ROOT):
-        if card.get("status") == "active":
-            card.pop("_path")
-            cards.append({**card, "card_origin": "builtin"})
+def load_cards(kb: Path | None, rebuild: bool, include_builtin: bool = True) -> list[dict[str, Any]]:
+    builtin = BUILTIN_KB.resolve()
+    legacy = LEGACY_BUILTIN_ROOT.resolve()
     try:
-        root = resolve_kb(kb)
+        roots = search_roots(kb, include_builtin)
     except FileNotFoundError:
-        if kb is not None or rebuild:
+        if kb is not None or not include_builtin or not legacy.is_dir():
             raise
-        return cards
-    index = root / "index" / "cards.jsonl"
-    if rebuild or not index.exists():
-        rebuild_index(root)
-    cards.extend({**card, "card_origin": "personal"} for card in load_jsonl(index))
+        roots = []
+    if include_builtin and legacy.is_dir() and legacy not in roots:
+        roots.append(legacy)
+    cards = []
+    for root in roots:
+        is_builtin = root in {builtin, legacy}
+        if rebuild and not is_builtin:
+            rebuild_index(root)
+        # Read current cards: a stale index must not re-enable an edited rule.
+        for card in iter_cards(root):
+            cards.append({**card, "_knowledge_origin": str(root), "_builtin": is_builtin,
+                          "card_origin": "builtin" if is_builtin else "personal",
+                          "_origin_rank": 2 if root == legacy else (1 if is_builtin else 0)})
     return cards
 
 
@@ -85,7 +90,7 @@ def markdown_table(cards: list[dict[str, Any]]) -> str:
 
 
 def context_block(cards: list[dict[str, Any]]) -> str:
-    lines = ["## 本任务检索到的编剧规则", ""]
+    lines = ["## 本任务检索到的编剧规则（个人优先，随包兜底）", ""]
     if not cards:
         lines.append("> 没有匹配且可应用的 active 规则。")
         return "\n".join(lines)
@@ -96,6 +101,8 @@ def context_block(cards: list[dict[str, Any]]) -> str:
         origin = "内置" if card["card_origin"] == "builtin" else "个人"
         lines.append(f"- **{card['id']}**（{origin}） [{card.get('priority', '')}] {rule}{suffix}。")
         for key, label in (("capability_id", "原能力"), ("source_note", "来源范围"),
+                           ("capability_revision", "上游能力修订"), ("version", "库内编辑版本"),
+                           ("source_commit", "来源提交"), ("_knowledge_origin", "加载位置"),
                            ("source_url", "来源链接"), ("source_verification", "核验"),
                            ("triggers", "触发"), ("diagnosis", "诊断"), ("action", "动作"),
                            ("output_contract", "输出"), ("self_check", "自检"),
@@ -116,7 +123,7 @@ def context_block(cards: list[dict[str, Any]]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("query", nargs="?", default="", help="Keywords or task description")
-    parser.add_argument("--kb", type=Path, help="Optional personal knowledge-base root")
+    parser.add_argument("--kb", type=Path, help="Knowledge-base root")
     parser.add_argument("--stage", help="planning/structure/episode/scene/dialogue/review/adaptation")
     parser.add_argument("--category")
     parser.add_argument("--capability", help="Exact original capability ID; other filters still apply")
@@ -124,13 +131,15 @@ def main() -> int:
     parser.add_argument("--production-mode")
     parser.add_argument("--status", default="active", help="Comma-separated statuses; defaults to active only")
     parser.add_argument("--limit", type=int, default=10)
-    parser.add_argument("--format", choices=("table", "json", "context", "ids"), default="table")
-    parser.add_argument("--rebuild", action="store_true", help="Rebuild the personal index before searching")
+    parser.add_argument("--format", choices=("table", "json", "context", "ids"), default="context")
+    parser.add_argument("--no-builtin", action="store_true", help="Search the personal library alone")
+    parser.add_argument("--story-limit", type=int, default=2, help="Maximum Story cards per task; use 19 only for inventory")
+    parser.add_argument("--rebuild", action="store_true", help="Rebuild deterministic indexes before searching")
     args = parser.parse_args()
-    if args.limit < 1:
-        parser.error("--limit must be positive")
+    if args.limit < 1 or args.story_limit < 1:
+        parser.error("--limit and --story-limit must be positive")
     try:
-        cards = load_cards(args.kb, args.rebuild)
+        cards = load_cards(args.kb, args.rebuild, not args.no_builtin)
     except (FileNotFoundError, ValueError) as exc:
         parser.error(str(exc))
 
@@ -153,16 +162,32 @@ def main() -> int:
         if args.query and relevance <= PRIORITY_SCORE.get(str(card.get("priority")), 0.0):
             continue
         selected.append({**card, "_score": round(relevance, 4)})
-    personal_capabilities = {
-        card["capability_id"] for card in selected
-        if card["card_origin"] == "personal" and card["status"] == "active" and card.get("capability_id")
-    }
+    # Prefer approved personal cards, then current bundled cards, then legacy
+    # public cards. Apply task filters first so unrelated scopes cannot mask a hit.
+    preferred_rank = {}
+    for card in selected:
+        capability = card.get("capability_id")
+        if capability and card.get("status") == "active":
+            preferred_rank[capability] = min(
+                preferred_rank.get(capability, card["_origin_rank"]), card["_origin_rank"]
+            )
     selected = [
         card for card in selected
-        if card["card_origin"] == "personal" or card.get("capability_id") not in personal_capabilities
+        if not card["_builtin"] or not card.get("capability_id")
+        or card["_origin_rank"] <= preferred_rank.get(card["capability_id"], card["_origin_rank"])
     ]
     selected.sort(key=lambda item: (-float(item["_score"]), str(item.get("id"))))
-    selected = selected[: args.limit]
+    limited = []
+    story_count = 0
+    for card in selected:
+        if str(card.get("capability_id", "")).startswith("cap.mckee-story-short-drama."):
+            if story_count >= args.story_limit:
+                continue
+            story_count += 1
+        limited.append(card)
+        if len(limited) >= args.limit:
+            break
+    selected = limited
 
     if args.format == "json":
         print(json.dumps(selected, ensure_ascii=False, indent=2))

@@ -87,6 +87,15 @@ def validate_card(root: Path, card: dict[str, Any], errors: list[str], warnings:
             warnings.append(f"{label}: active card still has placeholder rationale")
         if not card.get("positive_example") or not card.get("negative_example"):
             warnings.append(f"{label}: active card should include positive and negative examples")
+    if card.get("source_commit"):
+        if not isinstance(card.get("capability_revision"), int) or card["capability_revision"] < 1:
+            errors.append(f"{label}: upstream capability_revision must be a positive integer distinct from version")
+    if str(card.get("capability_id", "")).startswith("cap.mckee-story-short-drama.") and card.get("source_commit"):
+        for field in ("source_commit", "import_sha256", "original_source_sha256", "source_locator", "original_edition"):
+            if not card.get(field):
+                errors.append(f"{label}: imported Story capability requires {field}")
+        if card.get("import_sha256") != (card.get("source") or {}).get("sha256"):
+            errors.append(f"{label}: import_sha256 differs from immutable import source")
 
 
 def main() -> int:
@@ -113,6 +122,7 @@ def main() -> int:
         errors.append(str(exc))
     ids: dict[str, str] = {}
     rules: dict[str, str] = {}
+    current_story: dict[str, str] = {}
     for card in cards:
         validate_card(root, card, errors, warnings)
         card_id = str(card.get("id", ""))
@@ -123,6 +133,11 @@ def main() -> int:
         if normalized and normalized in rules:
             errors.append(f"duplicate normalized rule in {rules[normalized]} and {card_id}")
         rules[normalized] = card_id
+        cap = str(card.get("capability_id", ""))
+        if cap.startswith("cap.mckee-story-short-drama.") and card.get("status") == "active":
+            if cap in current_story:
+                errors.append(f"multiple active versions of {cap}: {current_story[cap]}, {card_id}")
+            current_story[cap] = card_id
 
     logs: dict[str, list[dict[str, Any]]] = {}
     for relative in (
@@ -146,7 +161,8 @@ def main() -> int:
         item = indexed.get(str(card.get("id")))
         if not item:
             continue
-        for field in ("rule", "category", "stage", "genre", "production_mode", "priority", "status", "version", "updated_at"):
+        for field in ("rule", "category", "stage", "genre", "production_mode", "priority", "status", "version", "updated_at",
+                      "capability_id", "capability_revision", "source_commit", "import_sha256", "original_source_sha256", "source_locator"):
             if item.get(field) != card.get(field):
                 stale_index = True
                 break

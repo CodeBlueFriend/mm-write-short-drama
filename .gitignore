@@ -6,3 +6,32 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# Local stories and private validation material are not distribution sources.
+/projects/
+/reviews/
+/rewrite-*/
+/episodes/
+/deliverables/
+/scripts/
+/.drama/
+/.humanizer/
+/.drama-state.json
+/characters.md
+/creative-plan.md
+/episode-directory.md
+/screenplay-format.md
+
+# The root library is personal; keep its committed skeleton and templates.
+# This does not match the public bundled library inside the skill directory.
+/knowledge-base/cards/*.md
+!/knowledge-base/cards/README.md
+!/knowledge-base/cards/card-template.md
+/knowledge-base/sources/*
+!/knowledge-base/sources/README.md
+/knowledge-base/archive/*
+!/knowledge-base/archive/README.md
+/knowledge-base/inbox/*
+!/knowledge-base/inbox/README.md
+/knowledge-base/index/*.jsonl
+/knowledge-base/conflicts/*.jsonl

@@ -80,7 +80,7 @@ def main() -> int:
         for number, episode in state.get("episodes", {}).items()
         if episode.get("status") != "not_started"
         and (
-            "04-story-bible.md" in changed
+            bool({"source-evidence.json", "03-story-treatment.md", "04-story-bible.md", "05-season-architecture.md"} & changed)
             or "06-episode-matrix.csv" in changed
             or any(path.startswith(f"episodes/EP{number}") or path.startswith(f"episodes/ep{number}") for path in changed)
         )
@@ -102,6 +102,12 @@ def main() -> int:
         state["projectRevision"] = revision
         save(index_path, index)
         save(state_path, state)
+        workflow_path = root / ".drama/workflow.json"
+        if workflow_path.exists() and {"source-evidence.json", "03-story-treatment.md", "04-story-bible.md", "05-season-architecture.md"} & changed:
+            workflow = load(workflow_path)
+            workflow["outlineConfirmation"] = None
+            workflow["phase"] = "outline_revision"
+            save(workflow_path, workflow)
         event = {
             "schemaVersion": "1.0.0", "eventId": event_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
