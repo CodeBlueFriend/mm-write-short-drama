@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "title": "Content-bound writing workflow",
+  "required": [
+    "schemaVersion",
+    "phase",
+    "reviews",
+    "outlineConfirmation",
+    "confirmationHistory",
+    "events"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "phase": {
+      "type": "string"
+    },
+    "reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sessionId",
+          "stage",
+          "episodes",
+          "sessionHash"
+        ]
+      }
+    },
+    "outlineConfirmation": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "confirmationHistory": {
+      "type": "array"
+    },
+    "events": {
+      "type": "array"
+    }
+  }
+}

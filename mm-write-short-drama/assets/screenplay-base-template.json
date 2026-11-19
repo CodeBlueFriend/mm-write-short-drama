@@ -1,6 +1,5 @@
 {
   "schemaVersion": 1,
-  "referenceSha256": "66ab3f7330bc9067cd3f1734dd875aa7264394a39ddfa76dac3d2bb4f6381486",
   "importedAt": "2026-11-18",
   "scope": "Formatting only; all source screenplay text removed",
   "template": "screenplay-base-template.docx",
@@ -16,6 +15,23 @@
     "前置信息": "ScriptMetadata",
     "前置标题": "ScriptPrefaceHead"
   },
-  "optionalPreface": "Only supplied current-project Markdown; never auto-filled from reference",
-  "referenceFile": "《下岗大厨：一把马勺成首富》（30集）(1).docx"
+  "referenceFile": "private-reference-screenplay.docx",
+  "frontMatter": "Nine reviewed current-project modules are required for formal delivery; optional only for explicitly labeled previews",
+  "frontMatterLayout": {
+    "inlineMetadata": [
+      "剧本名",
+      "来源",
+      "类型",
+      "集数",
+      "剧名寓意",
+      "热门元素"
+    ],
+    "separateHeading": [
+      "创作理由",
+      "故事梗概",
+      "主要角色"
+    ],
+    "verifiedAt": "2026-11-18"
+  },
+  "referenceAvailability": "Private source retained outside the repository; source text, filename and fingerprint are not distributed."
 }

@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 SCHEMA_VERSION = "1.0.0"
-SOURCE_MODES = {"original", "adaptation", "source_remix"}
+SOURCE_MODES = {"original", "adaptation", "source_remix", "market_research"}
 PRODUCTION_MODES = {"live_action", "ai_drama", "hybrid", "unspecified"}
 ORIENTATIONS = {"vertical", "horizontal", "custom"}
 DELIVERY_SCOPES = {"diagnosis", "outline", "episodes", "screenplay", "review", "revision", "knowledge", "unspecified"}
@@ -87,6 +87,33 @@ def validate(root: Path) -> tuple[list[str], list[str]]:
         errors.append("project-state.json: invalid deliveryScope")
     if state.get("reviewMode") not in REVIEW_MODES:
         errors.append("project-state.json: invalid reviewMode")
+    from production_specs import SPECS, PLAN, structure_errors, readiness, plan_errors
+    if (root / SPECS).is_file():
+        production = load_json(root / SPECS, errors)
+        errors += structure_errors(production)
+        if production.get("productionMode") is not None and state.get("productionMode") != production["productionMode"]:
+            errors.append("project productionMode differs from user selection")
+        if production.get("sourceMode") is not None and state.get("sourceMode") != production["sourceMode"]:
+            errors.append("project sourceMode differs from user selection")
+        if production.get("sourceMode") is not None and load_json(root / "source-evidence.json", errors).get("sourceMode") != production["sourceMode"]:
+            errors.append("source evidence route differs from user selection")
+        pending = readiness(root)
+        if pending["status"] != "ready":
+            warnings.append("production choices pending; next: " + str(pending["nextRequired"]))
+        if (root / PLAN).is_file():
+            plan = load_json(root / PLAN, errors)
+            if plan.get("schemaVersion") != SCHEMA_VERSION:
+                errors.append("episode-plan.json: unsupported schemaVersion")
+            if plan.get("plannedTotalEpisodes") is not None:
+                errors += plan_errors(root, plan, state)
+            elif state.get("totalEpisodes") is not None or any(plan.get(k) is not None for k in ("planReason", "specsHash", "plannedAt")):
+                errors.append("empty episode plan requires empty actual count and planning fields")
+            else:
+                warnings.append("actual episode plan pending; use workflow set-plan")
+        else:
+            warnings.append("actual episode plan pending; use workflow set-plan")
+    else:
+        warnings.append("legacy project needs explicit production choices; writing remains blocked")
     if not isinstance(state.get("projectRevision"), int) or state.get("projectRevision", 0) < 1:
         errors.append("project-state.json: projectRevision must be a positive integer")
     if state.get("projectRevision") != index.get("projectRevision"):
@@ -159,6 +186,12 @@ def validate(root: Path) -> tuple[list[str], list[str]]:
                 errors.append(f"episode {number}: approved with blocking issues")
             if not episode.get("basedOnStoryBibleRevision") or not episode.get("basedOnMatrixRevision"):
                 errors.append(f"episode {number}: approved without upstream revisions")
+            from workflow_lib import validate_episode_review
+            for error in validate_episode_review(root, number):
+                errors.append(f"episode {number}: {error}")
+            for key, field in (("storyBible", "basedOnStoryBibleRevision"), ("episodeMatrix", "basedOnMatrixRevision")):
+                if artifacts.get(key, {}).get("revision") != episode.get(field):
+                    errors.append(f"episode {number}: obsolete {key} revision")
 
     for line_number, line in enumerate(log_path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():

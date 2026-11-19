@@ -36,6 +36,7 @@ STAGES = {"planning", "structure", "episode", "scene", "dialogue", "review", "ad
 PRIORITIES = {"hard", "preferred", "optional", "experimental"}
 STATUSES = {"draft", "active", "pending-conflict", "duplicate", "rejected", "deprecated", "archived"}
 PRODUCTION_MODES = {"live-action", "ai", "hybrid", "unspecified", "all"}
+BUILTIN_KB = Path(__file__).resolve().parents[1] / "knowledge-base"
 
 CATEGORY_RULES = (
     ("去 AI 味", "review", ("ai味", "ai 味", "机器味", "模板腔", "解释腔")),
@@ -106,6 +107,27 @@ def resolve_kb(value: str | Path | None) -> Path:
         if candidate.is_dir():
             return ensure_layout(candidate)
     raise FileNotFoundError("knowledge-base not found; pass --kb /path/to/knowledge-base")
+
+
+def search_roots(value: str | Path | None, include_builtin: bool = True) -> list[Path]:
+    """Find personal data without creating directories; bundled rules are a fallback."""
+    roots: list[Path] = []
+    if value:
+        personal = Path(value).expanduser().resolve()
+        if not personal.is_dir():
+            raise FileNotFoundError(f"knowledge-base not found: {personal}")
+        roots.append(personal)
+    else:
+        for base in (Path.cwd(), *Path.cwd().parents):
+            candidate = base / "knowledge-base"
+            if candidate.is_dir():
+                roots.append(candidate.resolve())
+                break
+    if include_builtin and BUILTIN_KB.is_dir() and BUILTIN_KB.resolve() not in roots:
+        roots.append(BUILTIN_KB.resolve())
+    if not roots:
+        raise FileNotFoundError("knowledge-base not found; pass --kb /path/to/knowledge-base")
+    return roots
 
 
 def normalize_text(value: str) -> str:
@@ -274,7 +296,7 @@ def rebuild_index(root: Path) -> tuple[int, int]:
         clean["card_path"] = str(Path(card["_path"]).relative_to(root.parent))
         search_text = " ".join(
             str(clean.get(key, ""))
-            for key in ("id", "title", "rule", "rationale", "category", "stage", "genre", "production_mode", "exceptions")
+            for key in ("id", "title", "rule", "rationale", "category", "stage", "genre", "production_mode", "exceptions", "capability_id", "triggers", "diagnosis", "action", "self_check")
         )
         clean["search_terms"] = sorted(tokenize(search_text))
         cards.append(clean)

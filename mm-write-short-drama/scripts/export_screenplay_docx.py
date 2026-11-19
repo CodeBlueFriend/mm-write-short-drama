@@ -4,12 +4,18 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+import shutil
+from datetime import datetime, timezone
 import re
 import sys
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from xml.etree import ElementTree
+
+from render_screenplay import verify_render_manifest
 
 try:
     from docx import Document
@@ -61,12 +67,14 @@ def collect_inputs(items: list[Path]) -> list[Path]:
     for item in items:
         path = item.expanduser().resolve()
         if path.is_dir():
-            files.extend(sorted(path.glob("EP*.md"), key=natural_key))
+            files.extend(sorted((p for p in path.glob("EP*.md") if re.fullmatch(r"EP\d+\.md", p.name, re.I)), key=natural_key))
         elif path.is_file() and path.suffix.lower() == ".md":
             files.append(path)
         else:
             raise ValueError(f"not an episode Markdown file or directory: {path}")
     unique = list(dict.fromkeys(files))
+    if len(unique) != len(files):
+        raise ValueError("duplicate episode input paths")
     if not unique:
         raise ValueError("no episode Markdown files found")
     return unique
@@ -179,6 +187,9 @@ def parse_episode(path: Path) -> Episode:
             raise ValueError(
                 f"{path}: scene heading {scene!r} does not match episode {number}"
             )
+    scene_numbers = [int(SCENE_NUMBER_RE.match(scene).group("scene")) for scene in scenes]
+    if scene_numbers != list(range(1, len(scene_numbers)+1)):
+        raise ValueError(f"{path}: scene numbers must be unique, ordered and contiguous from 1")
     return Episode(number=number, blocks=tuple(blocks), source=path)
 
 
@@ -258,16 +269,11 @@ def add_front_matter(document: Document, path: Path | None) -> None:
     """Render only explicitly supplied current-project preface Markdown."""
     if path is None:
         return
-    for raw in path.read_text(encoding="utf-8-sig").splitlines():
-        stripped = raw.strip()
-        if not stripped:
+    for kind, text in front_matter_blocks(path):
+        if text:
+            document.add_paragraph(text, style="前置标题" if kind=="heading" else "前置信息")
+        else:
             add_blank_paragraph(document, style="前置信息")
-            continue
-        heading = re.match(r"^#{1,6}\s+(.+)$", stripped)
-        if heading:
-            document.add_paragraph(clean_markdown(heading.group(1)), style="前置标题")
-        elif not re.fullmatch(r"[-*_]{3,}", stripped):
-            document.add_paragraph(clean_markdown(stripped), style="前置信息")
 
 
 def add_font_fallbacks(path: Path) -> None:
@@ -301,14 +307,40 @@ def add_blank_paragraph(document: Document, style: str = "剧本文本") -> None
 def build_docx(
     episodes: list[Episode], output: Path, project_title: str, force: bool,
     front_matter: Path | None = None,
+    preview: bool = True,
+    project_dir: Path | None = None,
 ) -> None:
     if output.resolve() == BASE_TEMPLATE.resolve():
         raise ValueError("output must not overwrite the base template")
+    if output.with_suffix(".delivery.json").exists():
+        raise FileExistsError("published delivery is immutable, including preview retries; choose a new filename")
     if output.exists() and not force:
         raise FileExistsError(f"output exists; pass --force to replace it: {output}")
+    if output.exists() and force:
+        if not preview:
+            raise FileExistsError("formal files cannot be replaced with force")
+        try:
+            existing_preview = Document(output).core_properties.category == "PREVIEW"
+        except Exception:
+            existing_preview = False
+        if not existing_preview:
+            raise FileExistsError("force can replace only a labeled preview; choose a new filename")
+    if not preview:
+        if project_dir is None or front_matter is None:
+            raise ValueError("formal build requires project_dir and approved front_matter")
+        project_dir = project_dir.resolve()
+        if output.resolve().parent != project_dir / ".drama" / "staging":
+            raise ValueError("formal builds must be staged before visual QA and publish")
+        errors = validate_front_matter(front_matter, project_title, [e.number for e in episodes], project_total(project_dir))
+        errors.extend(release_errors(project_dir, episodes, front_matter))
+        if errors:
+            raise ValueError("; ".join(errors))
     document = load_base_template()
     document.core_properties.title = project_title
     document.add_paragraph(project_title, style="剧本标题")
+    if preview:
+        document.core_properties.category = "PREVIEW"
+        document.add_paragraph("版式预览 尚未通过正式交付验收", style="前置信息")
     add_front_matter(document, front_matter)
     for episode in episodes:
         add_blank_paragraph(document)
@@ -332,38 +364,261 @@ def build_docx(
         temporary.with_name(f".{temporary.name}.fonts.docx").unlink(missing_ok=True)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("inputs", nargs="+", type=Path, help="Episode Markdown files or an episodes directory")
-    parser.add_argument("--output", required=True, type=Path, help="Combined .docx output path")
-    parser.add_argument(
-        "--project-title",
-        help="Visible title at the start of the Word document (defaults to the output filename without its episode range)",
-    )
-    parser.add_argument("--front-matter", type=Path, help="Optional approved current-project preface Markdown; never copied from the reference")
-    parser.add_argument("--force", action="store_true", help="Replace an existing output file")
-    args = parser.parse_args()
+FRONT_MODULES = ["剧本名", "来源", "类型", "集数", "剧名寓意", "热门元素", "创作理由", "故事梗概", "主要角色"]
+PLACEHOLDER_RE = re.compile(r"\[.?填写|［.?填写|待填写|待补充|TODO|TBD|占位|示例人物|角色甲|角色乙")
 
-    output = args.output.expanduser().resolve()
-    if output.suffix.lower() != ".docx":
-        parser.error("--output must end in .docx")
+
+def file_hash(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def read_front_modules(path: Path) -> list[tuple[str, str]]:
+    modules: list[tuple[str,str]]=[]
+    for raw in path.read_text(encoding="utf-8-sig").splitlines():
+        line=clean_markdown(re.sub(r"^#{1,6}\s+", "", raw.strip()))
+        if not line: continue
+        match=re.fullmatch(r"(剧本名|来源|类型|短剧类型|剧名寓意|热门元素|创作理由|故事梗概|主要角色|集数)(?:\s*[：:]\s*(.*)|\s*)",line)
+        if match:
+            name="类型" if match.group(1)=="短剧类型" else match.group(1)
+            modules.append((name,match.group(2) or ""))
+        elif modules:
+            name,body=modules[-1]
+            modules[-1]=(name,(body+"\n"+line).strip())
+    return modules
+
+
+def front_matter_blocks(path: Path) -> list[tuple[str,str]]:
+    modules=read_front_modules(path)
+    if [name for name,_ in modules]==FRONT_MODULES:
+        blocks=[]
+        for index,(name,body) in enumerate(modules):
+            if index<6:
+                blocks.append(("body",name+"："+body.replace("\n"," ")))
+            else:
+                blocks.append(("heading",name+"："))
+                blocks.extend(("body",line) for line in body.splitlines())
+        return blocks
+    blocks=[]
+    for raw in path.read_text(encoding="utf-8-sig").splitlines():
+        line=raw.strip()
+        if not line:
+            blocks.append(("body",""));continue
+        heading=re.match(r"^#{1,6}\s+(.+)$",line)
+        if heading: blocks.append(("heading",clean_markdown(heading.group(1))))
+        elif not re.fullmatch(r"[-*_]{3,}",line): blocks.append(("body",clean_markdown(line)))
+    return blocks
+
+
+def validate_front_matter(path: Path, title: str, numbers: list[int], total: int | None = None) -> list[str]:
+    """Validate required current-project modules, independently of content review."""
+    text = path.read_text(encoding="utf-8-sig")
+    modules = read_front_modules(path)
+    errors: list[str] = []
+    if [name for name, _ in modules] != FRONT_MODULES:
+        errors.append("front matter must contain the nine modules in order: " + "、".join(FRONT_MODULES))
+    data = dict(modules)
+    for name in FRONT_MODULES:
+        if not data.get(name, "").strip():
+            errors.append(f"empty front-matter module: {name}")
+    if data.get("剧本名", "").strip("《》 ") != title.strip("《》 "):
+        errors.append("front-matter 剧本名 must equal the visible project title")
+    if PLACEHOLDER_RE.search(text):
+        errors.append("front matter contains placeholder or reference-screenplay content")
+    count = data.get("集数", "")
+    total_match = re.search(r"(?:全剧)?\s*共\s*(\d+)\s*集", count)
+    range_match = re.search(r"本稿(?:为|范围为|交付)?\s*第?\s*(\d+)\s*(?:[—–－至到-]\s*(\d+)\s*)?集", count)
+    if not total_match or not range_match:
+        errors.append("集数 must state 全剧共N集，本稿为第X—Y集正式剧本")
+    else:
+        stated_total = int(total_match.group(1))
+        start, end = int(range_match.group(1)), int(range_match.group(2) or range_match.group(1))
+        if (start, end) != (numbers[0], numbers[-1]) or stated_total < end or (total and stated_total != total):
+            errors.append("front-matter total/range does not match the selected episodes and project")
+    # Content truth, author attribution, role completeness and spoiler intent are
+    # validated by the final reading, bound to this exact file hash.
+    return errors
+
+
+def expected_paragraphs(episodes: list[Episode], title: str, front_matter: Path | None) -> list[str]:
+    result = [title]
+    if front_matter:
+        result.extend(text for _,text in front_matter_blocks(front_matter) if text)
+    for episode in episodes:
+        result.append(f"第 {episode.number} 集")
+        result.extend(text for _, text in episode.blocks)
+    return result
+
+
+def verify_visible_text(path: Path, episodes: list[Episode], title: str, front_matter: Path) -> str:
+    actual = [p.text.strip() for p in Document(path).paragraphs if p.text.strip()]
+    expected = expected_paragraphs(episodes, title, front_matter)
+    if actual != expected:
+        mismatch = next((i for i, (a,b) in enumerate(zip(actual, expected)) if a != b), min(len(actual),len(expected)))
+        raise ValueError(f"Word visible text differs from reviewed source at paragraph {mismatch+1}")
+    return hashlib.sha256("\n".join(actual).encode("utf-8")).hexdigest()
+
+
+def release_errors(project: Path, episodes: list[Episode], front: Path) -> list[str]:
     try:
-        files = collect_inputs(args.inputs)
-        episodes = sorted((parse_episode(path) for path in files), key=lambda item: item.number)
-        numbers = [episode.number for episode in episodes]
-        if len(numbers) != len(set(numbers)):
+        from workflow_lib import validate_release
+    except ImportError as exc:
+        raise ValueError("workflow release gate is unavailable; use --preview only for a labeled layout preview") from exc
+    # Never allow exporting an unreviewed file with the same episode number.
+    errors = []
+    for episode in episodes:
+        canonical = project / "episodes" / f"EP{episode.number:03d}.md"
+        if not canonical.is_file() or file_hash(canonical) != file_hash(episode.source):
+            errors.append(f"EP{episode.number:03d}: selected file differs from the project's reviewed episode")
+    errors.extend(validate_release(project, [f"{e.number:03d}" for e in episodes], front_matter=front))
+    return errors
+
+
+def project_total(project: Path) -> int | None:
+    state = json.loads((project / ".drama/project-state.json").read_text(encoding="utf-8"))
+    value = state.get("totalEpisodes") or state.get("specifications",{}).get("totalEpisodes")
+    return int(value) if value else None
+
+
+def stage_release(project: Path, episodes: list[Episode], output: Path, title: str, front: Path) -> Path:
+    errors = validate_front_matter(front, title, [e.number for e in episodes], project_total(project))
+    errors.extend(release_errors(project, episodes, front))
+    if errors:
+        raise ValueError("; ".join(errors))
+    if output.exists():
+        raise FileExistsError("existing formal delivery is immutable; choose a new output filename")
+    staging = project / ".drama" / "staging"
+    staging.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    staged = staging / f"{output.stem}-{stamp}.docx"
+    build_docx(episodes, staged, title, False, front_matter=front, preview=False, project_dir=project)
+    visible_hash = verify_visible_text(staged, episodes, title, front)
+    manifest = {
+        "schemaVersion":"1.0.0", "status":"awaiting_visual_qa", "project":str(project),
+        "target":str(output), "title":title, "frontMatter":str(front), "frontHash":file_hash(front),
+        "episodes":[{"number":e.number,"source":str(e.source),"hash":file_hash(e.source)} for e in episodes],
+        "stagedHash":file_hash(staged), "visibleTextHash":visible_hash,
+        "createdAt":datetime.now(timezone.utc).isoformat(),
+    }
+    staged.with_suffix(".manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    return staged
+
+
+def publish_release(staged: Path, qa_path: Path) -> Path:
+    manifest = json.loads(staged.with_suffix(".manifest.json").read_text(encoding="utf-8"))
+    if manifest.get("status") != "awaiting_visual_qa":
+        raise ValueError("staged release has already been published or is invalid")
+    project, front = Path(manifest["project"]), Path(manifest["frontMatter"])
+    output = Path(manifest["target"])
+    if output.exists():
+        raise FileExistsError("existing formal delivery is immutable; stage a new version")
+    if file_hash(staged) != manifest["stagedHash"] or file_hash(front) != manifest["frontHash"]:
+        raise ValueError("staged Word or front matter changed after content verification")
+    episodes=[]
+    for item in manifest["episodes"]:
+        source=Path(item["source"])
+        if file_hash(source) != item["hash"]:
+            raise ValueError(f"EP{item['number']:03d} changed after staging")
+        episodes.append(parse_episode(source))
+    errors=validate_front_matter(front,manifest["title"],[e.number for e in episodes],project_total(project))
+    errors.extend(release_errors(project,episodes,front))
+    if errors:
+        raise ValueError("; ".join(errors))
+    if verify_visible_text(staged,episodes,manifest["title"],front) != manifest["visibleTextHash"]:
+        raise ValueError("visible text fingerprint changed")
+    qa=json.loads(qa_path.read_text(encoding="utf-8"))
+    if qa.get("docxHash") != file_hash(staged) or qa.get("passed") is not True or not qa.get("reviewer") or not qa.get("notes"):
+        raise ValueError("visual QA must identify this exact DOCX, reviewer, result and observations")
+    if not qa.get("renderManifest"):
+        raise ValueError("visual QA requires the manifest from an actual fresh render")
+    render_manifest_path=Path(qa["renderManifest"]).expanduser()
+    if not render_manifest_path.is_absolute():
+        render_manifest_path=qa_path.parent/render_manifest_path
+    pages=qa.get("pages",[])
+    render_dir=Path(qa.get("renderDirectory", "")).expanduser()
+    if not render_dir.is_absolute():
+        render_dir=qa_path.parent/render_dir
+    render_errors=verify_render_manifest(staged,render_manifest_path,render_dir)
+    if render_errors:
+        raise ValueError("; ".join(render_errors))
+    if not render_dir.is_dir():
+        raise ValueError("visual QA renderDirectory is missing")
+    rendered=sorted(render_dir.glob("page-*.png"),key=natural_key)
+    if not rendered or len(pages)!=len(rendered):
+        raise ValueError("visual QA must cover every rendered page")
+    if [p.name for p in rendered] != [f"page-{i}.png" for i in range(1,len(rendered)+1)]:
+        raise ValueError("rendered page numbering is incomplete")
+    seen=set()
+    for item in pages:
+        page=Path(item.get("path",""))
+        if page.resolve() not in {p.resolve() for p in rendered} or page.resolve() in seen or item.get("sha256")!=file_hash(page) or item.get("inspected") is not True:
+            raise ValueError("page QA is missing, duplicated, changed or uninspected")
+        seen.add(page.resolve())
+    output.parent.mkdir(parents=True,exist_ok=True)
+    # exclusive creation: even concurrent retries cannot overwrite a delivery
+    created = False
+    try:
+        with output.open("xb") as target, staged.open("rb") as source:
+            created = True
+            shutil.copyfileobj(source,target)
+    except Exception:
+        # Only remove a partial file created by this invocation.
+        if created and output.exists() and file_hash(output)!=manifest["stagedHash"]:
+            output.unlink()
+        raise
+    manifest.update(status="published",publishedAt=datetime.now(timezone.utc).isoformat(),visualQaHash=file_hash(qa_path),renderManifest=str(render_manifest_path.resolve()),renderManifestHash=file_hash(render_manifest_path),outputHash=file_hash(output))
+    staged.with_suffix(".manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    output.with_suffix(".delivery.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    return output
+
+
+def main() -> int:
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("inputs",nargs="*",type=Path,help="Episode Markdown files or an episodes directory")
+    parser.add_argument("--output",type=Path,help="Intended combined .docx delivery path")
+    parser.add_argument("--project-title",help="Visible current-project title")
+    parser.add_argument("--front-matter",type=Path,help="Reviewed current-project preface with all nine modules")
+    parser.add_argument("--project-dir",type=Path,help="Project whose current review evidence permits delivery")
+    parser.add_argument("--preview",action="store_true",help="Write a visibly labeled layout preview; never a formal delivery")
+    parser.add_argument("--publish",type=Path,help="Publish a staged Word after visual inspection")
+    parser.add_argument("--visual-qa",type=Path,help="Actual page inspection record for --publish")
+    parser.add_argument("--force",action="store_true",help="Replace a preview only; formal deliveries are immutable")
+    args=parser.parse_args()
+    try:
+        if args.publish:
+            if not args.visual_qa or args.preview or args.inputs:
+                raise ValueError("--publish requires --visual-qa and cannot be combined with preview or inputs")
+            output=publish_release(args.publish.expanduser().resolve(),args.visual_qa.expanduser().resolve())
+            print(json.dumps({"status":"published","output":str(output)},ensure_ascii=False))
+            return 0
+        if not args.inputs or not args.output:
+            raise ValueError("inputs and --output are required")
+        output=args.output.expanduser().resolve()
+        if output.suffix.lower()!=".docx":
+            raise ValueError("--output must end in .docx")
+        episodes=sorted((parse_episode(p) for p in collect_inputs(args.inputs)),key=lambda e:e.number)
+        numbers=[e.number for e in episodes]
+        if len(numbers)!=len(set(numbers)):
             raise ValueError("duplicate episode numbers in inputs")
-        project_title = (args.project_title or infer_project_title(output)).strip()
-        if not project_title:
+        if numbers!=list(range(numbers[0],numbers[-1]+1)):
+            raise ValueError("episode range has gaps")
+        title=(args.project_title or infer_project_title(output)).strip()
+        if not title:
             raise ValueError("--project-title must not be blank")
-        build_docx(episodes, output, project_title, args.force, front_matter=args.front_matter)
-    except (FileExistsError, OSError, ValueError) as exc:
+        front=args.front_matter.expanduser().resolve() if args.front_matter else None
+        if args.preview:
+            build_docx(episodes,output,title,args.force,front_matter=front,preview=True)
+            print(json.dumps({"status":"preview","output":str(output),"episodes":numbers},ensure_ascii=False))
+        else:
+            if not args.project_dir or not front:
+                raise ValueError("formal export requires --project-dir and --front-matter; use --preview for layout-only output")
+            if args.force:
+                raise ValueError("--force applies to previews only")
+            staged=stage_release(args.project_dir.expanduser().resolve(),episodes,output,title,front)
+            print(json.dumps({"status":"awaiting_visual_qa","staged":str(staged),"target":str(output)},ensure_ascii=False))
+        return 0
+    except (FileExistsError,OSError,ValueError,KeyError) as exc:
         parser.error(str(exc))
 
-    episode_range = f"第{numbers[0]}集" if len(numbers) == 1 else f"第{numbers[0]}-{numbers[-1]}集"
-    print(f"Merged {len(episodes)} episode(s) ({episode_range}) into: {output}")
-    return 0
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     raise SystemExit(main())

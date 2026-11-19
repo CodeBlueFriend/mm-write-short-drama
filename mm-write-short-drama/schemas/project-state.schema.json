@@ -14,7 +14,7 @@
     "schemaVersion": {"const": "1.0.0"},
     "projectId": {"type": "string", "minLength": 1},
     "projectRevision": {"type": "integer", "minimum": 1},
-    "sourceMode": {"enum": ["original", "adaptation", "source_remix"]},
+    "sourceMode": {"enum": ["original", "adaptation", "source_remix", "market_research"]},
     "productionMode": {"enum": ["live_action", "ai_drama", "hybrid", "unspecified"]},
     "orientation": {"enum": ["vertical", "horizontal", "custom"]},
     "deliveryScope": {"enum": ["diagnosis", "outline", "episodes", "screenplay", "review", "revision", "knowledge", "unspecified"]},

@@ -1,6 +1,6 @@
 {
   "name": "mm-write-short-drama",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "Draft, adapt, revise, and export Chinese short drama screenplays.",
   "author": {
     "name": "CodeBlueFriend",
@@ -9,21 +9,35 @@
   "homepage": "https://github.com/CodeBlueFriend/mm-write-short-drama",
   "repository": "https://github.com/CodeBlueFriend/mm-write-short-drama",
   "license": "MIT",
-  "keywords": ["screenwriting", "short-drama", "screenplay", "story-structure", "continuity", "docx", "短剧编剧", "剧本改编"],
+  "keywords": [
+    "screenwriting",
+    "short-drama",
+    "screenplay",
+    "story-structure",
+    "continuity",
+    "docx",
+    "短剧编剧",
+    "剧本改编"
+  ],
   "skills": "./mm-write-short-drama/",
   "interface": {
     "displayName": "短剧编剧 · Screenwriter",
     "shortDescription": "短剧策划、分集、续写、审稿和 Word 导出",
-    "longDescription": "为中文短剧编剧和制作团队整理原创创意、改编材料或已有剧本。支持故事圣经、整季结构、分集矩阵、场次卡、对白调整、跨集连续性审核和批次 Word 导出。可以用随附的三张公开编剧卡检查一句梗概、整季节拍和对白中的言语行动。项目资料保存在用户指定的工作区。Word 导出需要可用的 Python 环境。",
+    "longDescription": "为中文短剧编剧和制作团队整理原创创意、改编材料或已有剧本。支持单场试戏、局部改稿、可选独立主笔、完整故事与大纲确认、分批正文、跨集连续性审核和 Word 交付。随附五书24项方法摘要，按任务检索并保留来源范围；旧版三张公开编剧卡作为兼容兜底。项目资料保存在用户指定的工作区。Word 正式交付需要可用的 Python 和文档渲染环境。",
     "developerName": "CodeBlueFriend",
     "category": "Productivity",
-    "capabilities": ["Story planning", "Screenplay adaptation", "Continuity review", "Word export"],
+    "capabilities": [
+      "Story planning",
+      "Screenplay adaptation",
+      "Continuity review",
+      "Word export"
+    ],
     "websiteURL": "https://github.com/CodeBlueFriend/mm-write-short-drama",
     "supportURL": "https://github.com/CodeBlueFriend/mm-write-short-drama/issues",
     "privacyPolicyURL": "https://github.com/CodeBlueFriend/mm-write-short-drama/blob/main/docs/plugin-privacy.md",
     "defaultPrompt": [
       "用一句梗概检查我的短剧创意，点出主角的目标、阻力和失败代价。",
-      "把我的故事整理成 6 集短剧，先给项目启动单和故事圣经。",
+      "做真人短剧，选择自己编写，每集90秒，期望6集。先讲通完整故事，审后给大纲，等我确认再写。",
       "审核我的前 3 集剧本，列出角色知情和道具去向上的矛盾。"
     ],
     "brandColor": "#1C6657",

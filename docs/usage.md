@@ -1,6 +1,6 @@
-# 命令行使用手册
+# v1.3 命令行使用手册
 
-以下命令从仓库根目录运行。想直接在 Codex 对话里立项、续写或审稿，可从 [项目首页](../README.md) 选择相应示例。
+以下命令从仓库根目录运行。直接在 Codex 对话里立项、续写或审稿，可从 [项目首页](../README.md) 选择示例。独立试戏、局改和仅审核使用主入口直接返回候选结果，无需初始化或经过下述正式交付门；采纳后再按正式项目流程纳入。
 
 ## 知识库命令
 
@@ -65,7 +65,7 @@ python3 mm-write-short-drama/scripts/search_knowledge.py \
 
 默认只返回 `active`。当前项目明确要求和锁定事实始终优先；`pending-conflict` 不会被调用。
 
-v1.2.0 支持在语义诊断后用 `--capability <原能力ID>` 精确补查；卡片保留 `source_note / source_url / source_verification` 等来源字段。五项能力入口、ID 和核验边界见 [当前设计](current-design.md#五项写作能力与知识来源)。能力接口不表示仓库附带对应书籍全文或已审核私人卡。
+v1.3.0 支持在语义诊断后用 `--capability <原能力ID>` 精确补查；卡片保留 `source_note / source_url / source_verification` 等来源字段。五书24项摘要、能力 ID 和核验边界见 [当前设计](current-design.md#五书方法与来源)。同能力个人已启用卡优先，当前随包摘要兜底；三张旧公开卡保留兼容。能力接口不表示仓库附带对应书籍全文或已审核私人卡。
 
 ### 校验知识库
 
@@ -86,48 +86,144 @@ python3 mm-write-short-drama/scripts/ingest_knowledge.py \
 
 也可选择 `activate-new`；若选择 `keep-both`，必须用 `--note` 写清两条规则已经分离的适用范围。
 
-## 项目与 Word 导出命令
+## 正式项目工作流
 
-这些脚本负责可重复的初始化、索引、状态迁移、依赖分析、装配、校验、统计和 Word 导出；创作质量仍由工作流审核。
+脚本负责证据、覆盖、版本、状态和文件检查，语义与创作判断由实际读稿的编剧/审核者完成。命令帮助以当前源码 `--help` 为准。可以先建空骨架，但首个用户选择仍是AI/真人。`init --mode` 只决定骨架，不能当作用户已选来源；用 `set-specs --source-mode` 记录来源回执后，程序按来源补齐空骨架，不覆盖已有正文。切换明确来源时，旧 `source-evidence.json` 按原字节归档至 `.drama/source-route-history/<sha>.json`，新路由证据重新登记，防止旧证据冒充新来源。
 
 ```bash
 SKILL_DIR=./mm-write-short-drama
+PROJECT=./projects/example
+python3 "$SKILL_DIR/scripts/init_project.py" "$PROJECT" --mode original
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" status
 ```
 
-### 初始化项目
+来源回执分别用 `--source-mode original`、`--source-mode adaptation`、`--source-mode market_research`；骨架对应 `--mode original|adaptation|market-research`。旧 `--mode source-remix` 保留原素材再创作含义，不能自动改标为近期检索。`--through brief|story-bible|full` 仅决定创建骨架的范围，文件存在不等于内容完成。
+
+缺规格的骨架保持 `awaiting_production_specs`，`status` 依次显示等待制作方式、创作来源、单集时长或期望集数。用以下命令逐步转录真实选择（所有引号示例须换成用户真实原话与消息定位）：
 
 ```bash
-python3 "$SKILL_DIR/scripts/init_project.py" ./projects/my-drama --mode original
-python3 "$SKILL_DIR/scripts/init_project.py" ./projects/my-adaptation --mode adaptation
-python3 "$SKILL_DIR/scripts/init_project.py" ./projects/my-gate-a --mode original --through story-bible
-python3 "$SKILL_DIR/scripts/init_project.py" ./projects/my-remix --mode source-remix \
-  --production-mode live_action --orientation vertical --total-episodes 6
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --production-mode live_action --user-quote '用户选择真人的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --source-mode original --user-quote '用户选择自己编写的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --duration-seconds 90 \
+  --user-quote '用户选择90秒的原话' --message-ref '真实消息定位'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-specs \
+  --episode-count '40-60' \
+  --user-quote '用户期望40到60集的原话' --message-ref '真实消息定位'
 ```
 
-`--through brief` 只创建启动阶段文件；`--through story-bible` 创建到审核门 A；默认 `full` 创建完整骨架。为保护已有项目，目标目录非空时脚本会拒绝覆盖。
+来源选定后了解题材与其他普通需求，再记录时长和期望集数；题材等普通需求可先标待定。AI用 `--production-mode ai_drama`；`--source-mode` 支持 `original|adaptation|market_research`，`source_remix` 仅兼容旧项目；范围时长用 `--duration-range 50-60`。新增来源/时长/集数参数必须配真实回执；旧制作方式/骨架路线/总数参数不自动成为已选。四项未齐不能运行 treatment/outline 审读或进入分集、正文。
 
-### 状态恢复与上游影响分析
+用户已明确四项选择后，可以一次初始化（例中的自己编写来源也已明确）：
 
 ```bash
-python3 "$SKILL_DIR/scripts/validate_state.py" ./projects/my-drama --json
-python3 "$SKILL_DIR/scripts/impact_analysis.py" ./projects/my-drama \
-  --changed 04-story-bible.md --json
+python3 "$SKILL_DIR/scripts/init_project.py" ./projects/complete-example --mode original \
+  --production-mode live_action --source-mode original --duration-seconds 90 --episode-count '40-60' \
+  --specs-user-quote '用户实际说全四项规格的原话' --specs-message-ref '真实消息定位'
 ```
 
-影响分析默认只读。用户批准具体变更后才加 `--apply --approved-by ... --reason ...` 标记依赖失效；脚本不会自动重写正文。逐集通过 `update_episode_state.py` 记录 `planned → draft → in_review → revision/in_review → approved`，批准前要求阻断问题清零并记录上游 revision。完整命令和校验边界见 [当前设计](current-design.md#单集状态与版本依赖)。
+期望数保存在 `.drama/production-specs.json`；实际总数和理由另存 `.drama/episode-plan.json`，`state.totalEpisodes` 镜像实际数。规格齐全、写好来源证据和故事底稿后：
 
-### 合并导出 Word
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" status
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" review-pack --stage treatment
+```
+
+命令返回本次 `READ-...` session ID及按顺序的正文分块。先实际读分块，保存首读笔记，再打开来源和大纲。以下使用返回的真实ID替换 `READ-...`：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" report-template --session READ-... --output review-template.json
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" first-read --session READ-... --report first-read.json
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" reveal-context --session READ-...
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" record-review --session READ-... --report reviewed.json
+```
+
+模板包含 `firstRead` 与 `secondPass` 两个对象，需分别取出，在实际阅读后填写为上面的两个文件。空模板、`read:true` 或计分不能代替实读。每个检查域和问题都需可回指的原文证据；返回阻断问题时按根因返修，用新正文创建新会话复检。
+
+底稿通过后补大纲和圣经，按完整故事记录实际规划数（58只是命令示例）：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" set-plan \
+  --total-episodes 58 --reason '当前故事各阶段的实际规划理由'
+```
+
+再运行 `review-pack --stage outline`，重复两遍审读。底稿绑定规格，大纲及后续审读另绑定实际规划；定实际数不无故使已审底稿失效。用户真实确认该版之后才执行：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" confirm-outline \
+  --decision confirm --quote '用户实际确认原话' --message-ref '真实对话定位' --scope '全剧大纲及本次交付范围'
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" check-writing
+```
+
+不能把示例中的引号内容当作用户授权。用户要求修改时用 `--decision revise` 记录实际意见，再改稿、重审、重新确认。`status` 在重启时发现内容变化会持久化失效状态。
+
+正文阶段先用 `build_context_pack.py "$PROJECT" --episodes 1-5` 装配上下文，再用 `review-pack --stage batch --episodes 1-5` 批审。逐集状态仍由 `update_episode_state.py` 维护，但批准须有当前有效批审证据和实际文件，调用者不能自行声明问题数替代审核。上游影响分析仍用 `impact_analysis.py`；已有修改授权可按其范围执行，不能擅改锁定内容。
+
+### 润色与正式 Word
+
+先保存前后稿，按需局部编辑或原样通过，用 `polish_guard.py inspect|record|check` 留下当前hash的最终语义复核记录。程序是保守差异检查，金额、责任人、日期、否定、条件与承诺仍需逐处读。外部Humanizer的旧token检查单独通过不构成语义通过。
+
+Word的“类型/短剧类型”填写题材，制作方式单独记录。正式Word的全剧集数按 `state.totalEpisodes` 实际规划填写，不用期望数或范围冒填。首集之前按顺序包含：剧本名、来源、类型/短剧类型、集数（全剧与本稿范围）、剧名寓意、热门元素、创作理由、故事梗概、主要角色。由已确认材料生成当前项目内容，不能套用样剧人物、空标题或虚构署名。分批稿写清本批收束与未来回收归属。
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" review-pack \
+  --stage final --episodes 1-5 --front-matter "$PROJECT/front-matter.md"
+```
+
+完成最终两遍通读、当前问题清零和事实复核后检查并暂存：
+
+```bash
+python3 "$SKILL_DIR/scripts/workflow.py" "$PROJECT" check-release \
+  --episodes 1-5 --front-matter "$PROJECT/front-matter.md"
+python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" \
+  "$PROJECT/episodes/EP001.md" "$PROJECT/episodes/EP002.md" "$PROJECT/episodes/EP003.md" \
+  "$PROJECT/episodes/EP004.md" "$PROJECT/episodes/EP005.md" \
+  --project-dir "$PROJECT" --project-title 项目名 --front-matter "$PROJECT/front-matter.md" \
+  --output "$PROJECT/deliverables/项目名_第01-05集.docx"
+```
+
+导出输入目录必须只含该批要交付的集；也可显式列出本批文件。命令先输出 `.drama/staging/` 中待验收的Word和清单，尚未写正式交付文件。用同一bundled Python执行实际渲染包装器，指定真实的文档渲染脚本；输出目录必须是新的，不能给旧图片补认证：
+
+```bash
+python3 "$SKILL_DIR/scripts/render_screenplay.py" /absolute/project/.drama/staging/returned-file.docx \
+  --renderer /实际bundled路径/documents/render_docx.py \
+  --output-dir /absolute/project/work/word-render-新版本
+```
+
+包装器实际调用渲染器，输出PDF、全部页图和 `render-manifest.json`。逐页打开图片检查，在视觉QA中记录准确docx hash、审核者、全部页图hash及观察；`QA.renderManifest` 必须指向本次包装器实际生成的 `render-manifest.json`，`renderDirectory` 指向其目录。发布时重新读取PDF真实页数、核对每页尺寸与摘要，并检查manifest绑定的Word和渲染器；1×1占位图、缺页或另一份Word的旧渲染不能用QA自报hash放行。然后执行：
 
 ```bash
 python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" \
-  ./projects/my-drama/episodes/EP001.md ./projects/my-drama/episodes/EP002.md \
-  --output ./projects/my-drama/deliverables/项目名_第01-02集.docx \
-  --project-title 项目名
+  --publish /absolute/project/.drama/staging/returned-file.docx --visual-qa /absolute/project/visual-qa.json
 ```
 
-默认采用 `assets/screenplay-base-template.docx`：宋体、13 磅总标题、10.5 磅正文、1.4 倍行距、标题行黄色高亮、蓝色台词及真实页码字段。导出先清除中性占位，仅写入当前项目内容，并隐藏控制信息和连续性维护区。可选 `--front-matter ./projects/my-drama/front-matter.md` 只输出用户明确提供且已审核的当前项目前置内容；未提供就不输出。一个批次一个 Word，各集不强制另起一页。详见 [Word 交付规则](../mm-write-short-drama/references/word-delivery.md)。
+正式文件不能覆盖；重试使用新版本路径。正文、大纲、前置内容或待交付Word变化后，相关审核/确认/实物验收失效。版式预览必须显式 `--preview`，页面标识预览，不计正式状态。详见 [Word规则](../mm-write-short-drama/references/word-delivery.md)。
 
-真实剧本须先完成内容审核、外部 Humanizer 编辑与记录，再导出并渲染逐页检查。导出脚本本身不会证明这些门已通过。
+默认版式保留宋体、13磅总标题、10.5磅正文、1.4倍行距、黄色标题行、蓝色台词和真实PAGE/NUMPAGES。各集连续流排，一批全部集数一个Word；不在Word里重新改对白。
+
+### 其他工具
+
+- `index_source.py`：索引原著，记录文件hash与章节/行号；
+- `validate_project.py`、`validate_state.py`：检查文件、字段、依赖和状态；
+- `screenplay_stats.py`：检查场数、对白与粗估时长，不能替代朗读；
+- `import_book_capabilities.py`：隔离导入、核查后启用、显式迁移旧六卡；
+- `search_knowledge.py --format context`：查询落笔需要的完整执行字段；
+- `validate_knowledge.py`：核来源hash、能力版本与索引。
+
+### 润色设置与记录
+
+默认 `local`，只改已定位的表达问题；`off` 使用相同前后稿并记录实际事实复核；`full` 仅在项目明确选择后使用。独立主笔稿把具体问题送回同一主笔，不在汇总时再合写。`polish_guard.py inspect` 生成差异和保守风险提示，`record` 接受真实逐差异语义复核，`check` 检查当前稿件与已审哈希。已使用随包或外部 Humanizer 时记录唯一实际调用链；其旧 token 校验不能替代语义复核。[完整字段与命令](../mm-write-short-drama/references/humanizer-adapter.md)
+
+### 仅预览版式
+
+```bash
+python3 "$SKILL_DIR/scripts/export_screenplay_docx.py" "$PROJECT/episodes/EP001.md" \
+  --project-title 格式预览 --output /tmp/screenplay-preview.docx --preview
+```
+
+预览明确标识尚未通过正式交付，不写正式状态，前置内容可省略。正式导出要求 `--project-dir`、`--front-matter`、当前有效的确认和审读，先暂存，实际渲染和逐页检查后才 `--publish`。
 
 ### 给原著建立稳定索引
 
@@ -183,6 +279,7 @@ python3 -m py_compile ./mm-write-short-drama/scripts/*.py
 python3 -m unittest discover -s tests -v
 python3 ./mm-write-short-drama/evals/test_p0.py
 python3 ./tests/validate_seeded_knowledge.py
+python3 ./mm-write-short-drama/scripts/validate_knowledge.py --kb ./mm-write-short-drama/knowledge-base
 ```
 
 建议用 [测试提示集](test-prompts.md) 做触发、原创、改编、连续性陷阱、去 AI 味和技巧冲突回归测试。

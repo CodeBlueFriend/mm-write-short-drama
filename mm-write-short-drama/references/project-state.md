@@ -1,8 +1,11 @@
 # 项目状态、依赖与失效传播
 
-## 三个机器状态文件
+## 机器状态文件
 
-- `.drama/project-state.json`：项目修订、路由、当前阶段、单集状态和关键上游版本。
+- `.drama/project-state.json`：项目修订、路由、当前阶段、单集状态和关键上游版本；`state.totalEpisodes` 镜像实际规划总数。
+- `.drama/production-specs.json`：用户选择的制作方式、创作来源、单集时长、期望集数（具体数/范围）及真实原话、消息定位；与实际规划总数分开。
+- `.drama/episode-plan.json`：`plannedTotalEpisodes/planReason` 保存大纲实际总数与规划理由，不混入用户规格文件。
+- `.drama/source-route-history/<sha>.json`：切换明确来源前按原字节保存的旧来源证据；新路由证据单独重置登记。
 - `.drama/artifact-index.json`：产物路径、revision、审核状态和 `dependsOn` 依赖图。
 - `.drama/invalidation-log.jsonl`：每次失效传播的追加日志；不得回写或删除旧事件。
 
@@ -10,7 +13,7 @@
 
 ## 恢复与提交
 
-开始工作先运行 `scripts/validate_state.py <project>`。读取当前状态后，只加载本任务需要的上游产物。每个完成的产物单独增加 revision；每集单独提交状态，不把批次当成不可分割事务。
+开始工作先运行 `scripts/workflow.py <project> status` 检测内容变动、持久化失效并恢复等待点，再运行 `scripts/validate_state.py <project>`。新项目缺制作方式、来源、时长或期望集数时保持 `awaiting_production_specs`，`status` 按 `productionMode → sourceMode → duration → episodeCount → episodePlan` 显示当前等待项；题材等普通需求可先标待定。用 `set-specs` 分步转录真实选择；sourceMode有值但缺回执仍须真实补选，不能自动承认。新增来源/时长/集数初始化参数无回执会被拒绝；旧路由、总集数或默认值只作待核候选，不猜成已选。四项未齐禁止 treatment/outline 审读及分集、正文。读取当前状态后，只加载本任务需要的上游产物。每个完成的产物单独增加 revision；每集单独提交状态，不把批次当成不可分割事务。
 
 单集状态机：
 
@@ -20,7 +23,9 @@ not_started → planned → draft → in_review → approved
 approved/stale → planned（完成影响分析并获得用户批准后重建）
 ```
 
-使用 `scripts/update_episode_state.py` 执行迁移。进入 `approved` 前，`openBlockingIssues` 必须为 0，且必须记录依据的故事圣经和分集矩阵 revision。
+使用 `scripts/update_episode_state.py` 执行迁移。进入 planned/draft/in_review/approved 前，必须有完整规格选择、当前底稿、大纲审读及真实用户对当前版本的确认。实际规划用 `workflow.py PROJECT set-plan --total-episodes N --reason ...` 记录；与期望有偏离时说明剧情理由，不设固定比例，最终随大纲人工确认。批准从当前 batch 报告计算阻断问题，不信任调用者计数；还须最终语义复核、正确的上游 revision 与源文件哈希。`--blocking-issues` 仅保留兼容，手填0不能绕过。
+
+底稿 treatment 绑定规格；outline、batch、final 和大纲确认另绑定实际plan。记录实际总数不无故使已审底稿失效；修改规格仍按其真实依赖传播。
 
 ## 上游修改
 
@@ -36,4 +41,7 @@ python3 scripts/impact_analysis.py PROJECT --changed 04-story-bible.md
 
 ## 旧项目迁移
 
-旧项目缺少 `.drama/` 时，先根据现存文件生成迁移草案，把无法证明的 revision、批准状态和依赖标为 unknown/draft；不得因为文件存在就推断其已批准。用户确认迁移草案后再写入状态文件。
+旧项目缺少 `.drama/` 时，先根据现存文件生成迁移草案，把无法证明的 revision、批准状态和依赖标为 unknown/draft；不得因为文件存在就推断其已批准。旧制作方式、来源路由、时长和总集数字段只能作为待核候选，不自动生成规格选择回执。用户确认迁移草案后再写入状态文件。
+
+
+`.drama/workflow.json` 保存阶段、不可变审读会话引用与确认历史；`.drama/readings/READ-*/` 保存分块正文、首读笔记、二遍资料和实际问题报告。正文或其依赖改变即时使门不可通过，`status` 会将已批准受影响集标为 stale；不得因计数为0或文件存在自动恢复批准。详情见 [final-reading.md](final-reading.md)。

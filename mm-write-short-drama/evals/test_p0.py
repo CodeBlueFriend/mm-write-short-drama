@@ -12,6 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
+sys.path.insert(0, str(ROOT / "evals/fixtures"))
+from workflow_fixture import seed, confirm, finish_review, fixture_polish
 
 
 def run(*args: str, expect: int = 0) -> subprocess.CompletedProcess[str]:
@@ -27,7 +29,7 @@ def run(*args: str, expect: int = 0) -> subprocess.CompletedProcess[str]:
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="mm-drama-p0-") as temp:
         project = Path(temp) / "original-project"
-        run(str(SCRIPTS / "init_project.py"), str(project), "--mode", "original", "--production-mode", "ai_drama", "--orientation", "vertical", "--total-episodes", "6")
+        seed(project)
         for relative in (
             ".drama/project-state.json", ".drama/artifact-index.json",
             "continuity/relationships.csv", "continuity/evidence.csv",
@@ -36,6 +38,8 @@ def main() -> int:
             assert (project / relative).exists(), relative
         run(str(SCRIPTS / "validate_state.py"), str(project))
         run(str(SCRIPTS / "validate_project.py"), str(project), "--stage", "full")
+        run(str(SCRIPTS / "update_episode_state.py"), str(project), "--episode", "1", "--to", "planned", expect=2)
+        confirm(project)
 
         transitions = [
             ("planned", ["--story-bible-revision", "1", "--matrix-revision", "1"]),
@@ -47,6 +51,8 @@ def main() -> int:
         run(str(SCRIPTS / "update_episode_state.py"), str(project), "--episode", "1", "--to", "approved", expect=2)
         run(str(SCRIPTS / "update_episode_state.py"), str(project), "--episode", "1", "--to", "revision")
         run(str(SCRIPTS / "update_episode_state.py"), str(project), "--episode", "1", "--to", "in_review", "--blocking-issues", "0")
+        finish_review(project, "batch", ["001"])
+        fixture_polish(project, ["001"])
         run(str(SCRIPTS / "update_episode_state.py"), str(project), "--episode", "1", "--to", "approved")
         run(str(SCRIPTS / "validate_state.py"), str(project))
 
@@ -54,7 +60,7 @@ def main() -> int:
         impact = json.loads(report.stdout)
         assert "05-season-architecture.md" in impact["direct"]
         before = json.loads((project / ".drama/artifact-index.json").read_text(encoding="utf-8"))
-        assert before["artifacts"]["seasonArchitecture"]["status"] == "draft"
+        assert before["artifacts"]["seasonArchitecture"]["status"] == "approved"
         run(str(SCRIPTS / "impact_analysis.py"), str(project), "--changed", "04-story-bible.md", "--apply", "--approved-by", "eval", "--reason", "regression test")
         after = json.loads((project / ".drama/artifact-index.json").read_text(encoding="utf-8"))
         assert after["artifacts"]["seasonArchitecture"]["status"] == "stale"

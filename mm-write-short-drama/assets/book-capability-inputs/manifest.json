@@ -1,0 +1,32 @@
+{
+  "repository": "https://github.com/CodeBlueFriend/short-drama-book-skills",
+  "commit": "6e99009572a64f99d60134405fbf1cf200b0dfe4",
+  "selection": "repository-root knowledge-inbox: 5 first-four + 19 Story summaries; no original book text bundled",
+  "files": {
+    "first-four-01-short-drama-payoff-turn.md": "528840dd1e575c00c1db554fe5bf0bbb332f18405f245b570079fea90cc0cc92",
+    "first-four-02-showrunner-character-mystery.md": "5733f9efb6016f8f4891c33d2352daa2c22671ef029de534fd68804149c86364",
+    "first-four-03-save-the-cat-logline.md": "05ca6c6349e94f91e8f0be1dadc0ea00ca4aecc8807c00bbdb1e55a2b100bfa0",
+    "first-four-04-save-the-cat-beat-sheet.md": "8efd52252c6b52eabef7c65c71e02a10e98b9542c4eda020501f68b2a1f5d13e",
+    "first-four-05-mckee-verbal-action.md": "80e283c2f2a2ee9ab7c16d9f3226705f0cf5b50407a33d3402c42e0e5e74cd72",
+    "story-01-expectation-gap.md": "62604fa1aa32367b849288656b493fd13772f14b66322021b9964f4c3cad579d",
+    "story-02-inciting-incident.md": "42a247b9ed8e881f25fd3885eec8f8553391f08aa0d13698f06cea4cc432fd83",
+    "story-03-progressive-complications.md": "57822839bd8b6a0c2691ba448c5e0edce700f49cd02e97254300e7f9b8af2852",
+    "story-04-scene-analysis.md": "e6bddc1bcc67a130dc841e83eed953ade82364600ff35066f2d3b899223c1822",
+    "story-05-crisis-choice.md": "8e5f14ce5c812a9e01c5da4c1fa129098c4b8c4a8fb3aed86e4aba65113371fc",
+    "story-06-climax-payoff.md": "0570f5f762451b31698851d704e8701b1f230e5387d4b575e0d578f5c6b8a592",
+    "story-07-story-form.md": "6f8a71670520f1987d2478c64665e03b10c910bb677f902d0c79435ae84176b6",
+    "story-08-setting-research.md": "3f5561c63fd6ec1a635fe3005f97a3a9ba98988d1c72d904fc92c6216fd6a072",
+    "story-09-genre-contract.md": "61e210a73e7f6f8bc8477382b8312aac29ec0df959bcd11ea9fd07032590642d",
+    "story-10-character-pressure.md": "efadfba79a012a04f70f79040f6dc9a48824f4bdbe5cdbe60d00ecc3f71b41cc",
+    "story-11-controlling-idea.md": "9612a569c49ed54c5c24c43f1458aeda576a6fa08d0948a199b47165ecf2a640",
+    "story-12-setup-payoff.md": "97dfe0bf62524121c9a6261f1aa32408287fa9006828094ae0df9a409c550c56",
+    "story-13-composition-rhythm.md": "af05b8cf2c6872aea8ba02c20e40fa3eb1e0752d369118d0278b65034f1046cf",
+    "story-14-antagonism-depth.md": "858834532ed9180779f5f290ab6454b48adff5e8347803abbced24aa1dfebfe7",
+    "story-15-dramatized-exposition.md": "22ecdc7b23d78ea150031686e967c9b3a77bcfc01d6cf15b1b511e6f87e0c7ef",
+    "story-16-audience-information.md": "11704c04ae1bc0f934929008ba7aaa67ecd6de080e857deef00a208d3680a8ad",
+    "story-17-screen-action.md": "ae8a3d7c1d63479d8c0444c4323d7eea78e0f10ff13d2c4a844747433e6eaa89",
+    "story-18-inside-out-workflow.md": "dd9a7423f562427343d1df18ee0beea6ee5902dba270ad511565e10d32c7eaa3",
+    "story-19-adaptation-recreation.md": "363b1a8c00395a1f1b9e04bbde86f6a4b0cb17d24bfd1ba7fba70d389e0365e4",
+    "story-source-manifest.json": "07d1be465e25e932ca76daa6090d1e8c09cab7192703b20711390a24887d2d6a"
+  }
+}

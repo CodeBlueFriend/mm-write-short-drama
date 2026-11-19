@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "decisionId": "",
+  "stage": "planning",
+  "writingProblem": "",
+  "lockedFacts": [],
+  "upstreamDecisionIds": [],
+  "method": {
+    "cardId": "",
+    "capabilityId": "",
+    "capabilityRevision": 0,
+    "libraryVersion": 0,
+    "sourceCommit": "",
+    "importSha256": ""
+  },
+  "disposition": "candidate",
+  "reason": "",
+  "chosenAction": "",
+  "alternativesAndCosts": [],
+  "sourceArtifacts": [],
+  "downstreamLocations": [],
+  "verification": {
+    "question": "",
+    "evidence": "",
+    "result": "pending"
+  }
+}

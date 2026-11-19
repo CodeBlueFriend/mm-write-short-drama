@@ -70,7 +70,7 @@ def main() -> int:
     for item in args.inputs:
         item = item.expanduser().resolve()
         if item.is_dir():
-            files.extend(item.glob("EP*.md"))
+            files.extend(p for p in item.glob("EP*.md") if re.fullmatch(r"EP\d+\.md", p.name, re.I))
         elif item.suffix.lower() == ".md":
             files.append(item)
     files = sorted(set(files))
